@@ -97,7 +97,7 @@
         }
 
         /* --- 📱 RWD 手機版樣式 (合併完整版) --- */
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             
             /* === 1. 這是你原本的選單代碼 (必須保留！) === */
             .menu-toggle { 
@@ -134,16 +134,24 @@
             /* 讓手機版的內容區高度更彈性，防止被網址列遮擋 */
             .main-container {
                 width: 100%;
-                height: auto !important;     /* 強制自動高度 */
-                min-height: 100vh;           /* 至少佔滿一屏 */
-                overflow-y: visible !important; /* 強制允許捲動 */
-                padding-bottom: 150px;       /* 底部給足夠空間 */
-                -webkit-overflow-scrolling: touch; /* iOS 滑動優化 */
+                /* 強制高度自動，讓它能自然捲動 */
+                height: auto !important;
+                min-height: 100vh;
+                overflow-y: visible !important;
+                
+                /* 🌟 關鍵修正：大幅增加底部緩衝區 */
+                /* 之前是 150px，現在針對 iPad 加大到 200px */
+                /* 這樣就算 iOS 回彈，按鈕下面還有足夠的空白撐著 */
+                padding-bottom: 200px; 
+                
+                -webkit-overflow-scrolling: touch;
             }
             
             iframe {
                 width: 100%;
-                height: 1600px !important;   /* 強制拉長 iframe，數值可以改大 */
+                /* 稍微再拉長一點，確保內容不被截斷 */
+                min-height: 1600px; 
+                height: auto !important;
                 display: block;
             }
         }
@@ -203,5 +211,6 @@
     </script>
 </body>
 </html>
+
 
 
