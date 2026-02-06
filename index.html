@@ -11,7 +11,14 @@
             padding: 0; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: #f3f4f6; 
-            overflow: hidden; /* 防止出現雙重捲軸 */
+            /* 移除這裡的 overflow: hidden */
+        }
+
+        /* 只在電腦版鎖定 Body 捲動 (因為電腦版是用內部容器捲動) */
+        @media (min-width: 769px) {
+            body {
+                overflow: hidden;
+            }
         }
         
         /* --- 頂部導航欄 Navbar --- */
@@ -126,16 +133,18 @@
             
             /* 讓手機版的內容區高度更彈性，防止被網址列遮擋 */
             .main-container {
-                height: auto;           /* 取消強制全螢幕高度 */
-                min-height: calc(100vh - 60px); /* 至少有這麼高 */
-                padding-bottom: 100px;  /* 🌟 加大緩衝區到 100px，確保按鈕一定看得到 */
-                overflow-y: visible;    /* 讓內容自然延伸 */
+                width: 100%;
+                height: auto !important;     /* 強制自動高度 */
+                min-height: 100vh;           /* 至少佔滿一屏 */
+                overflow-y: visible !important; /* 強制允許捲動 */
+                padding-bottom: 150px;       /* 底部給足夠空間 */
+                -webkit-overflow-scrolling: touch; /* iOS 滑動優化 */
             }
             
-            /* 強制 iframe 在手機上撐開高度 */
             iframe {
-                min-height: 1400px; /* 拉長 iframe，確保裡面內容全部展開 */
-                height: auto;
+                width: 100%;
+                height: 1600px !important;   /* 強制拉長 iframe，數值可以改大 */
+                display: block;
             }
         }
     </style>
@@ -194,4 +203,5 @@
     </script>
 </body>
 </html>
+
 
