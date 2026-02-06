@@ -35,19 +35,16 @@
         }
 
         .preview-panel {
-            /* 移除固定寬度，改為佔滿 */
-            width: 100%; 
-            flex-shrink: 0;
+            /* 讓它佔滿剩餘空間，這樣按鈕就會被推到底部 */
+            flex: 1; 
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* 🌟 關鍵：讓內容靠下對齊 */
             
-            /* 移除原本的黑底色 #1e1e1e，改為透明或與背景融合 */
-            background: transparent; 
-            border-radius: 0;
-            box-shadow: none;
-            
-            /* 增加一點間距 */
-            padding: 20px 0; 
-            display: flex; 
-            flex-direction: column; 
+            background: transparent;
+            padding: 20px 0 0 0; /* 上方留點空隙 */
+            box-sizing: border-box;
         }
 
         /* Language Switcher */
@@ -153,7 +150,32 @@
         @media (max-width: 500px) { .modal-body { column-count: 1; } }
         .preset-preview-popup { position: absolute; display: none; width: 220px; background: #fff; border: 3px solid var(--primary-color); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 3000; pointer-events: none; }
         .preset-preview-popup img { width: 100%; display: block; }
-        .copy-btn { width: 100%; padding: 10px; margin-top: 10px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .copy-btn {
+            width: 100%;
+            padding: 15px; /* 加大一點，更好按 */
+            margin-top: auto; /* 🌟 雙重保險：將按鈕推到最底 */
+            
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px; /* 圓角稍微大一點 */
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            
+            /* 加點陰影讓它立體一點 */
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-2px); /* 滑鼠移上去微微上浮 */
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .copy-btn:active {
+            transform: translateY(0);
+        }
         .hidden-controls { display: none; margin-top: 8px; }
         @media (max-width: 900px) { .form-grid { grid-template-columns: 1fr; } .ref-controls-container { flex-direction: column; gap: 10px; } }
         /* 📱 手機版適配 (Mobile Responsive Fix) */
@@ -1570,5 +1592,9 @@
         initPresets();
         setLanguage('tw'); // Start with Traditional Chinese
     </script>
+    display: flex;
+            height: 100vh; /* 確保 body 佔滿視窗高度 */
+            box-sizing: border-box;
+            overflow: hidden; /* 防止雙卷軸 */
 </body>
 </html>
