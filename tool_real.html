@@ -19,37 +19,31 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* 讓內容置中，背景色保持 */
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0; padding: 20px;
-            display: flex; height: 100vh; box-sizing: border-box; gap: 20px;
-            display: flex;
-            height: 100vh; /* 確保 body 佔滿視窗高度 */
+            /* 移除 display: flex，改成 block 即可 */
+            display: block; 
+            height: auto; 
             box-sizing: border-box;
-            overflow: hidden; /* 防止雙卷軸 */
         }
 
         .controls-panel {
-            flex: 1; min-width: 600px;
+            /* 讓面板置中，最大寬度設為 800px (看您喜好) */
+            max-width: 900px; 
+            margin: 0 auto; /* 水平置中 */
+            
             background: var(--card-bg); border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; position: relative;
+            padding: 20px;
+            display: flex; flex-direction: column;
+            
+            /* 確保按鈕與上面內容有一點距離 */
+            gap: 15px; 
         }
 
-        .preview-panel {
-            /* 讓它佔滿剩餘空間，這樣按鈕就會被推到底部 */
-            flex: 1; 
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* 🌟 關鍵：讓內容靠下對齊 */
-            
-            background: transparent;
-            padding: 20px 0 0 0; /* 上方留點空隙 */
-            box-sizing: border-box;
-        }
+        
 
         /* Language Switcher */
         .lang-bar {
@@ -154,28 +148,22 @@
         @media (max-width: 500px) { .modal-body { column-count: 1; } }
         .preset-preview-popup { position: absolute; display: none; width: 220px; background: #fff; border: 3px solid var(--primary-color); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 3000; pointer-events: none; }
         .preset-preview-popup img { width: 100%; display: block; }
+           /* 按鈕樣式 (微調一下，讓它更好看) */
         .copy-btn {
             width: 100%;
-            padding: 15px; /* 加大一點，更好按 */
-            margin-top: auto; /* 🌟 雙重保險：將按鈕推到最底 */
-            
+            padding: 15px;
+            margin-top: 20px; /* 與上方內容分開 */
             background: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 8px; /* 圓角稍微大一點 */
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1rem;
-            
-            /* 加點陰影讓它立體一點 */
+            font-size: 1.1rem;
             box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
             transition: all 0.2s;
         }
-        
-        .copy-btn:hover {
-            transform: translateY(-2px); /* 滑鼠移上去微微上浮 */
-            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
-        }
+        .copy-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4); }
         
         .copy-btn:active {
             transform: translateY(0);
@@ -353,11 +341,24 @@
         <div id="neg" class="tab-content"><div id="negContainer"></div></div>
     </div>
 
-    <div class="preview-panel">
-        <h2 style="color: #ccc;">JSON Output Preview</h2>
-        <pre id="jsonOutput"style="display:none;"></pre>
+    <!-- ... 左側面板開始 ... -->
+    <div class="controls-panel">
+        <h1>...</h1>
+
+        <!-- ... 中間原本的那些 Tabs 和 Controls (保持不變) ... -->
+        
+        <div id="neg" class="tab-content"><div id="negContainer"></div></div>
+
+        <!-- 🌟 重點：把藍色按鈕搬到這裡！ (左側面板的最底部) -->
         <button class="copy-btn" onclick="copyToClipboard()" data-i18n="btn_copy">📋 複製 JSON 代碼</button>
+        
+        <!-- 🌟 重點：保留這個隱藏的元素，不然程式會報錯 -->
+        <pre id="jsonOutput" style="display:none;"></pre>
+
     </div>
+    <!-- ... 左側面板結束 ... -->
+
+    <!-- ❌ 原本的 <div class="preview-panel"> 整塊刪除 -->
 
     <script>
         const STORAGE_KEY = 'nano_banana_presets_v4';
