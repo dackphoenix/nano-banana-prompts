@@ -54,27 +54,55 @@
         .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; }
 
         @media (max-width: 768px) {
-            .nav-links { display: none; } /* 手機版先隱藏選單 */
-            .menu-toggle { display: block; }
-        }
+            .nav-links {
+                display: none;       /* 預設隱藏 */
+                position: absolute;  /* 絕對定位 */
+                top: 60px;           /* 在導航欄下方 */
+                left: 0;
+                width: 100%;
+                background: white;
+                flex-direction: column; /* 垂直排列 */
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                padding: 10px 0;
+            }
+            
+            /* 當加上 .show class 時顯示 */
+            .nav-links.show {
+                display: flex;
+            }
 
-        /* 內容區 */
-        .main-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-            min-height: calc(100vh - 100px);
+            .menu-toggle { 
+                display: block;      /* 顯示漢堡按鈕 */
+                padding: 10px;       /* 增加點擊範圍 */
+            }
         }
 
         /* iframe 樣式 (如果你選擇 iframe 方案) */
         iframe {
             width: 100%;
-            height: 85vh;
+            height: 100%;           /* 跟隨容器高度 */
             border: none;
-            border-radius: 12px;
-            background: white;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border-radius: 0;       /* 移除圓角，讓它無縫銜接 */
+            display: block;         /* 消除 iframe 底部預設間隙 */
         }
+        // 🍔 控制手機選單開關
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('show');
+        });
+
+        // 點擊任何一個連結後，自動收起選單 (優化體驗)
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('show');
+                
+                // 更新按鈕 active 狀態
+                document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+            });
+        });
     </style>
 </head>
 <body>
@@ -118,3 +146,4 @@
     </script>
 </body>
 </html>
+
