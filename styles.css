@@ -1,0 +1,59 @@
+body {
+    margin: 0;  /* 清除邊距 */
+    font-family: Arial, sans-serif;  /* 字體 */
+    background: #f4f4f4;  /* 背景色，可改 */
+}
+
+.navbar {
+    position: fixed;  /* 固定頂部 */
+    top: 0;
+    width: 100%;  /* 全寬 */
+    background: #333;  /* 深色背景 */
+    color: white;  /* 白字 */
+    padding: 10px;  /* 內距 */
+    z-index: 1000;  /* 確保喺最上面 */
+}
+
+.navbar ul {
+    list-style: none;  /* 去點 */
+    margin: 0;
+    padding: 0;
+    display: flex;  /* 橫排 */
+    justify-content: center;  /* 居中 */
+}
+
+.navbar li {
+    margin: 0 20px;  /* 間距 */
+    cursor: pointer;  /* 手指形狀 */
+    font-weight: bold;  /* 粗字 */
+}
+
+.navbar li:hover {
+    color: #ffd700;  /* 滑鼠移過變金黃，可改顏色 */
+}
+
+.content {
+    margin-top: 60px;  /* 留位畀 navbar（60px 高，可調） */
+    padding: 20px;  /* 內容內距 */
+}
+
+.section {
+    display: none;  /* 預設隱藏所有內容區 */
+    background: white;  /* 白底 */
+    padding: 20px;
+    border-radius: 8px;  /* 圓角 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);  /* 陰影 */
+}
+
+.active {
+    display: block;  /* 選中就顯示 */
+}
+
+/* 廣告位樣式（預留） */
+.ad-placeholder {
+    background: #eee;  /* 灰底 */
+    padding: 10px;
+    margin: 20px 0;
+    text-align: center;
+    font-style: italic;
+}
