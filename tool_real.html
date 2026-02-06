@@ -171,23 +171,30 @@
         .hidden-controls { display: none; margin-top: 8px; }
         @media (max-width: 900px) { .form-grid { grid-template-columns: 1fr; } .ref-controls-container { flex-direction: column; gap: 10px; } }
         /* 📱 手機版適配 (Mobile Responsive Fix) */
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             body {
-                flex-direction: column; /* 改為垂直排列 */
-                padding: 10px;          /* 減少邊距 */
-                height: auto;           /* 高度不再鎖死 */
+                /* 確保 body 能夠捲動且底部有超大緩衝 */
+                overflow-y: auto !important;
+                padding-bottom: 200px !important; 
+                height: auto !important;
             }
 
             .controls-panel {
-                min-width: 100%;        /* 寬度跟隨螢幕 */
-                width: 100%;            /* 佔滿 */
-                padding: 15px;          /* 內距縮小 */
+                /* 解除面板的高度限制，讓它自然撐開 */
+                height: auto !important;
+                overflow: visible !important;
+                margin-bottom: 50px;
             }
 
             .preview-panel {
                 width: 100%;            /* 預覽區也佔滿 */
                 margin-top: 20px;       /* 增加一點間距 */
             }
+            /* 確保按鈕不會被切掉 */
+            .copy-btn {
+                margin-bottom: 50px; 
+            }
+        }
             
             h1 {
                 font-size: 1.2rem;      /* 標題字縮小一點 */
