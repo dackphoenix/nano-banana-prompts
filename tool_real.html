@@ -24,6 +24,10 @@
             color: var(--text-color);
             margin: 0; padding: 20px;
             display: flex; height: 100vh; box-sizing: border-box; gap: 20px;
+            display: flex;
+            height: 100vh; /* 確保 body 佔滿視窗高度 */
+            box-sizing: border-box;
+            overflow: hidden; /* 防止雙卷軸 */
         }
 
         .controls-panel {
@@ -1592,9 +1596,5 @@
         initPresets();
         setLanguage('tw'); // Start with Traditional Chinese
     </script>
-    display: flex;
-            height: 100vh; /* 確保 body 佔滿視窗高度 */
-            box-sizing: border-box;
-            overflow: hidden; /* 防止雙卷軸 */
 </body>
 </html>
