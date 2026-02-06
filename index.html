@@ -5,20 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nano Banana AI Hub</title>
     <style>
-        /* 基礎設定 */
-        body { margin: 0; font-family: sans-serif; background: #f3f4f6; }
+        /* --- 基礎設定 --- */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f3f4f6; 
+            overflow: hidden; /* 防止出現雙重捲軸 */
+        }
         
-        /* 頂部導航欄 Navbar */
+        /* --- 頂部導航欄 Navbar --- */
         .navbar {
             background: #ffffff;
             border-bottom: 1px solid #e5e7eb;
+            height: 60px; /* 固定高度 */
             padding: 0 20px;
-            height: 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            position: sticky; /* 固定在頂部 */
-            top: 0;
+            position: relative; /* 為了讓手機選單定位 */
             z-index: 1000;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
@@ -30,79 +35,85 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
 
+        /* 電腦版選單 */
         .nav-links {
             display: flex;
-            gap: 20px;
+            gap: 10px;
         }
 
         .nav-item {
             text-decoration: none;
             color: #4b5563;
             font-weight: 500;
-            padding: 8px 12px;
+            padding: 8px 16px;
             border-radius: 6px;
             transition: all 0.2s;
             cursor: pointer;
+            font-size: 0.95rem;
+            user-select: none;
         }
 
         .nav-item:hover { background: #eff6ff; color: #3b82f6; }
         .nav-item.active { background: #3b82f6; color: white; }
 
-        /* 手機版漢堡選單 (隱藏/顯示邏輯需 JS) */
-        .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; }
+        /* 手機版漢堡按鈕 (預設隱藏) */
+        .menu-toggle { 
+            display: none; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            padding: 5px;
+            color: #4b5563;
+        }
 
+        /* --- 內容區 (全螢幕修正) --- */
+        .main-container {
+            /* 關鍵修正：寬度 100%，高度 = 視窗高度 - 導航欄高度 */
+            width: 100%;
+            height: calc(100vh - 60px); 
+            background: #f3f4f6;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block; /* 消除底部微小縫隙 */
+        }
+
+        /* --- 📱 RWD 手機版樣式 --- */
         @media (max-width: 768px) {
+            .menu-toggle { 
+                display: block; /* 手機上顯示漢堡按鈕 */
+            }
+
             .nav-links {
-                display: none;       /* 預設隱藏 */
-                position: absolute;  /* 絕對定位 */
-                top: 60px;           /* 在導航欄下方 */
+                display: none; /* 預設隱藏選單 */
+                position: absolute;
+                top: 60px; /* 在導航欄正下方 */
                 left: 0;
                 width: 100%;
                 background: white;
-                flex-direction: column; /* 垂直排列 */
+                flex-direction: column; /* 改為垂直排列 */
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 padding: 10px 0;
+                border-top: 1px solid #eee;
             }
-            
-            /* 當加上 .show class 時顯示 */
+
+            /* 當加上 .show class 時顯示選單 */
             .nav-links.show {
                 display: flex;
             }
 
-            .menu-toggle { 
-                display: block;      /* 顯示漢堡按鈕 */
-                padding: 10px;       /* 增加點擊範圍 */
+            .nav-item {
+                border-radius: 0;
+                padding: 15px 20px; /* 加大點擊範圍 */
+                border-bottom: 1px solid #f3f4f6;
             }
+            .nav-item:last-child { border-bottom: none; }
         }
-
-        /* iframe 樣式 (如果你選擇 iframe 方案) */
-        iframe {
-            width: 100%;
-            height: 100%;           /* 跟隨容器高度 */
-            border: none;
-            border-radius: 0;       /* 移除圓角，讓它無縫銜接 */
-            display: block;         /* 消除 iframe 底部預設間隙 */
-        }
-        // 🍔 控制手機選單開關
-        const menuToggle = document.querySelector('.menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
-
-        menuToggle.addEventListener('click', () => {
-            navLinks.classList.toggle('show');
-        });
-
-        // 點擊任何一個連結後，自動收起選單 (優化體驗)
-        document.querySelectorAll('.nav-item').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('show');
-                
-                // 更新按鈕 active 狀態
-                document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-            });
-        });
     </style>
 </head>
 <body>
@@ -111,39 +122,51 @@
     <nav class="navbar">
         <div class="logo">🍌 Nano Banana AI Hub</div>
         
-        <div class="menu-toggle">☰</div>
+        <!-- 手機漢堡按鈕 (加上了 onclick) -->
+        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
 
-        <div class="nav-links">
-            <a class="nav-item active" onclick="loadPage('real')">📷 真人攝影</a>
-            <a class="nav-item" onclick="loadPage('anime')">🎨 動畫風格</a>
-            <a class="nav-item" onclick="loadPage('pose')">💃 姿勢圖書館</a>
-            <a class="nav-item" onclick="loadPage('blog')">📚 技巧文章</a>
+        <div class="nav-links" id="navLinks">
+            <a class="nav-item active" onclick="loadPage('real', this)">📷 真人攝影</a>
+            <a class="nav-item" onclick="loadPage('anime', this)">🎨 動畫風格</a>
+            <a class="nav-item" onclick="loadPage('pose', this)">💃 姿勢圖書館</a>
+            <a class="nav-item" onclick="loadPage('blog', this)">📚 技巧文章</a>
         </div>
     </nav>
 
     <!-- 主內容區 -->
-    <div class="main-container" id="app">
-        <!-- 這裡將會載入不同的工具 -->
+    <div class="main-container">
+        <!-- 預設載入真人工具 (請確保你的舊檔案改名為 tool_real.html) -->
         <iframe src="tool_real.html" id="contentFrame"></iframe>
     </div>
 
     <script>
-        // 簡單的頁面切換邏輯
-        function loadPage(page) {
-            const frame = document.getElementById('contentFrame');
-            const links = document.querySelectorAll('.nav-item');
-            
-            // 更新按鈕狀態
-            links.forEach(l => l.classList.remove('active'));
-            event.target.classList.add('active');
+        // 1. 手機選單切換開關
+        function toggleMenu() {
+            const nav = document.getElementById('navLinks');
+            nav.classList.toggle('show');
+        }
 
-            // 切換內容
-            if (page === 'real') frame.src = 'tool_real.html'; // 你現在的檔案
-            if (page === 'anime') frame.src = 'tool_anime.html'; // 未來的動畫版
-            if (page === 'pose') frame.src = 'page_poses.html'; // 姿勢頁
-            if (page === 'blog') frame.src = 'page_blog.html'; // 文章頁
+        // 2. 頁面切換邏輯
+        function loadPage(page, element) {
+            const frame = document.getElementById('contentFrame');
+            
+            // 處理按鈕激活狀態 (Active State)
+            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            // 手機版：點擊選項後自動收起選單
+            const nav = document.getElementById('navLinks');
+            if (window.innerWidth <= 768) {
+                nav.classList.remove('show');
+            }
+
+            // 切換 iframe 內容
+            // 請確保你的目錄下有這些檔案，否則會 404
+            if (page === 'real') frame.src = 'tool_real.html';
+            if (page === 'anime') frame.src = 'tool_anime.html'; // 之後建立
+            if (page === 'pose') frame.src = 'page_poses.html';  // 之後建立
+            if (page === 'blog') frame.src = 'page_blog.html';   // 之後建立
         }
     </script>
 </body>
 </html>
-
