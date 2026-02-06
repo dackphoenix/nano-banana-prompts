@@ -180,37 +180,66 @@
         <iframe src="tool_real.html" id="contentFrame"></iframe>
     </div>
 
-    <script>
-        // 1. 手機選單切換開關
+        <script>
+        // 1. 手機選單切換
         function toggleMenu() {
             const nav = document.getElementById('navLinks');
             nav.classList.toggle('show');
         }
 
-        // 2. 頁面切換邏輯
+        // 2. 頁面載入邏輯 (核心升級)
         function loadPage(page, element) {
             const frame = document.getElementById('contentFrame');
-            
-            // 處理按鈕激活狀態 (Active State)
-            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
-            if(element) element.classList.add('active');
-
-            // 手機版：點擊選項後自動收起選單
             const nav = document.getElementById('navLinks');
+
+            // --- A. 更新按鈕樣式 ---
+            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+            // 如果是透過點擊觸發 (有 element)，就亮起該按鈕
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // 如果是透過網址觸發 (沒有 element)，手動找對應按鈕亮起
+                const targetBtn = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
+                if (targetBtn) targetBtn.classList.add('active');
+            }
+
+            // --- B. 手機版收起選單 ---
             if (window.innerWidth <= 768) {
                 nav.classList.remove('show');
             }
 
-            // 切換 iframe 內容
-            // 請確保你的目錄下有這些檔案，否則會 404
-            if (page === 'real') frame.src = 'tool_real.html';
-            if (page === 'anime') frame.src = 'tool_anime.html'; // 之後建立
-            if (page === 'pose') frame.src = 'page_poses.html';  // 之後建立
-            if (page === 'blog') frame.src = 'page_blog.html';   // 之後建立
+            // --- C. 切換 iframe 內容 ---
+            let src = 'tool_real.html'; // 預設首頁
+            if (page === 'real') src = 'tool_real.html';
+            if (page === 'anime') src = 'tool_anime.html';
+            if (page === 'pose') src = 'page_poses.html';
+            if (page === 'blog') src = 'page_blog.html';
+            
+            frame.src = src;
+
+            // --- D. 更新網址列 (不重新整理頁面) ---
+            // 這行會把網址變成 .../#anime
+            window.location.hash = page;
         }
+
+        // 3. 監聽網址變化 (一打開網頁時自動跳轉)
+        window.addEventListener('load', () => {
+            // 讀取網址 # 後面的字 (去掉 # 號)
+            const hash = window.location.hash.substring(1);
+            
+            if (hash) {
+                // 如果網址有 #anime，就載入 anime 頁
+                loadPage(hash);
+            } else {
+                // 如果網址乾淨，預設載入 real
+                loadPage('real');
+            }
+        });
     </script>
+
 </body>
 </html>
+
 
 
 
