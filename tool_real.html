@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano Banana Pro - Prompt Studio (v4.14 i18n)</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --accent-orange: #f97316;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0; padding: 20px;
+            display: flex; height: 100vh; box-sizing: border-box; gap: 20px;
+        }
+
+        .controls-panel {
+            flex: 1; min-width: 600px;
+            background: var(--card-bg); border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-y: auto; padding: 20px;
+            display: flex; flex-direction: column; position: relative;
+        }
+
+        .preview-panel {
+            width: 450px; flex-shrink: 0;
+            background: #1e1e1e; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 20px; display: flex; flex-direction: column; color: #d4d4d4;
+        }
+
+        /* Language Switcher */
+        .lang-bar {
+            /* 移除了 position: absolute, top, right */
+            display: flex; 
+            gap: 4px; 
+            background: #f0f9ff; 
+            padding: 4px; 
+            border-radius: 8px; 
+            border: 1px solid #bae6fd;
+            margin-left: auto; 
+        }
+        .lang-btn {
+            border: none; background: none; cursor: pointer; 
+            font-size: 1.1rem; /*稍微調小一點點以適應標題*/
+            padding: 4px 6px; border-radius: 4px; transition: all 0.2s; opacity: 0.6; filter: grayscale(0.8);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .lang-btn:hover { opacity: 1; background: #e0f2fe; filter: grayscale(0); }
+        .lang-btn.active { opacity: 1; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: bold; border: 1px solid #bae6fd; filter: grayscale(0); transform: scale(1.05); }
+        .lang-btn span { font-size: 0.6rem; margin-top: 1px; color: #333; font-weight: bold; }
+
+        h1 { margin-top: 0; font-size: 1.5rem; color: var(--primary-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; align-items: start; }
+        .form-full-width { grid-column: 1 / -1; }
+
+        .form-row { display: flex; align-items: flex-start; margin-bottom: 0; gap: 8px; position: relative; background: #fff; }
+        .field-checkbox { margin-top: 28px; transform: scale(1.1); cursor: pointer; flex-shrink: 0; }
+        .field-content { flex: 1; position: relative; min-width: 0; }
+        .form-row.disabled .field-content { opacity: 0.5; pointer-events: none; }
+
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85rem; color: #4b5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        input[type="text"], textarea, select, input[type="number"] {
+            width: 100%; padding: 6px 10px; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; background: #f9fafb;
+        }
+        textarea { height: 38px; resize: vertical; min-height: 38px; font-family: inherit; }
+        textarea:focus { height: 80px; position: absolute; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        .input-wrapper, .textarea-wrapper { position: relative; width: 100%; }
+        .has-magic input[type="text"], .has-magic textarea { padding-left: 30px; }
+        
+        .magic-btn {
+            position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.5;
+            transition: all 0.2s; z-index: 10; padding: 2px;
+        }
+        .textarea-wrapper .magic-btn { top: 12px; transform: none; }
+        .magic-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary-color); background: #fff; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+        .warning-text { color: var(--danger-color); font-size: 0.75rem; margin-top: 2px; display: block; }
+
+        .preset-manager { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .btn-preset { padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; }
+        .btn-save { background: var(--primary-color); color: white; }
+        .btn-load { background: white; border: 1px solid var(--border-color); }
+        
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .tab-btn { padding: 8px 15px; background: none; border: none; cursor: pointer; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .char-card { background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid var(--primary-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .char-card.outfit-card { border-left-color: var(--accent-teal); }
+        .char-title { font-size: 1rem; font-weight: bold; margin-bottom: 12px; color: #111827; padding-bottom: 8px; border-bottom: 1px dashed #e5e7eb; }
+        
+        .ref-controls-container { display: flex; gap: 15px; margin-bottom: 20px; }
+        .toggle-wrapper { flex: 1; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border-color); }
+        .toggle-wrapper.active-char { border-color: var(--accent-purple); background: #f5f3ff; }
+        .toggle-wrapper.active-outfit { border-color: var(--accent-teal); background: #f0fdfa; }
+        .toggle-wrapper.active-env { border-color: var(--accent-orange); background: #fff7ed; }
+        
+        .toggle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider.purple { background-color: var(--accent-purple); }
+        input:checked + .slider.teal { background-color: var(--accent-teal); }
+        input:checked + .slider.orange { background-color: var(--accent-orange); }
+        input:checked + .slider:before { transform: translateX(16px); }
+        
+        /* Modal & Masonry */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); z-index: 2000; display: none; backdrop-filter: blur(2px); }
+        .modal-content {
+            position: fixed; background: white; border-radius: 12px; width: auto; min-width: 300px; max-width: 900px; max-height: 85vh; 
+            overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); top: 50%; left: 50%; transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; animation: modalPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes modalPop { from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        .modal-header { padding: 12px 20px; background: #f9fafb; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0; }
+        .modal-body { padding: 20px; column-count: 3; column-gap: 20px; }
+        .preset-group { break-inside: avoid; background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .preset-category { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; margin: 0 0 8px 0; padding-bottom: 4px; border-bottom: 2px solid #f3f4f6; font-weight: 800; letter-spacing: 0.5px; }
+        .preset-item { padding: 6px 10px; cursor: pointer; border-radius: 6px; font-size: 0.9rem; margin-bottom: 2px; transition: all 0.1s; display: block; color: #374151; }
+        .preset-item:hover { background: #eff6ff; color: var(--primary-color); font-weight: 500; }
+        @media (max-width: 800px) { .modal-body { column-count: 2; } }
+        @media (max-width: 500px) { .modal-body { column-count: 1; } }
+        .preset-preview-popup { position: absolute; display: none; width: 220px; background: #fff; border: 3px solid var(--primary-color); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 3000; pointer-events: none; }
+        .preset-preview-popup img { width: 100%; display: block; }
+        .copy-btn { width: 100%; padding: 10px; margin-top: 10px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .hidden-controls { display: none; margin-top: 8px; }
+        @media (max-width: 900px) { .form-grid { grid-template-columns: 1fr; } .ref-controls-container { flex-direction: column; gap: 10px; } }
+        /* 📱 手機版適配 (Mobile Responsive Fix) */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column; /* 改為垂直排列 */
+                padding: 10px;          /* 減少邊距 */
+                height: auto;           /* 高度不再鎖死 */
+            }
+
+            .controls-panel {
+                min-width: 100%;        /* 寬度跟隨螢幕 */
+                width: 100%;            /* 佔滿 */
+                padding: 15px;          /* 內距縮小 */
+            }
+
+            .preview-panel {
+                width: 100%;            /* 預覽區也佔滿 */
+                margin-top: 20px;       /* 增加一點間距 */
+            }
+            
+            h1 {
+                font-size: 1.2rem;      /* 標題字縮小一點 */
+                flex-wrap: wrap;        /* 允許標題換行 */
+            }
+            
+            .lang-bar {
+                margin-left: 0;         /* 語言列不再強制靠右 */
+                margin-top: 5px;        /* 與標題分開一點 */
+                width: 100%;            /* 佔滿寬度 */
+                justify-content: flex-start; /* 靠左對齊 */
+                overflow-x: auto;       /* 如果太多旗仔，允許滑動 */
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr; /* 強制單欄排版 */
+            }
+            
+            /* 讓魔法棒按鈕好按一點 */
+            .magic-btn {
+                padding: 8px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="presetPreview" class="preset-preview-popup">
+        <img src="" id="presetPreviewImg" alt="Preview">
+    </div>
+
+    <!-- Language Bar -->
+    
+
+    <!-- Modal -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div id="modalContent" class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle" style="font-weight:bold; font-size:1.1rem;"></div>
+                <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#999;line-height:1;">×</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <h1>🍌 Nano Banana Prompt Studio <small style="font-size:0.5em; color:#999;">v4.14</small>
+<div class="lang-bar">
+        <button class="lang-btn active" onclick="setLanguage('tw')" id="lang-tw">🇹🇼<span>繁體</span></button>
+        <button class="lang-btn" onclick="setLanguage('cn')" id="lang-cn">🇨🇳<span>简体</span></button>
+        <button class="lang-btn" onclick="setLanguage('en')" id="lang-en">🇺🇸<span>EN</span></button>
+        <button class="lang-btn" onclick="setLanguage('jp')" id="lang-jp">🇯🇵<span>日本語</span></button>
+        <button class="lang-btn" onclick="setLanguage('kr')" id="lang-kr">🇰🇷<span>한국어</span></button>
+        <button class="lang-btn" onclick="setLanguage('es')" id="lang-es">🇪🇸<span>Español</span></button>
+    </div></h1>
+
+        <div class="preset-manager">
+            <span style="font-weight:bold; color:#0369a1; font-size:0.9rem;" data-i18n="storage_label">💾 設定 (Storage):</span>
+            <select id="presetSelect" style="width:auto; flex:1;">
+                <option value="" data-i18n="select_preset">-- 選擇已存設定 --</option>
+            </select>
+            <button class="btn-preset btn-load" onclick="loadSelectedPreset()" data-i18n="btn_load">📂 讀取</button>
+            <button class="btn-preset btn-save" onclick="saveCurrentPreset()" data-i18n="btn_save">💾 儲存</button>
+            <button class="btn-preset" style="color:red; border:1px solid #fee2e2;" onclick="deleteSelectedPreset()">🗑️</button>
+        </div>
+        
+        <h2 style="border:none; margin-bottom:5px; font-size:0.85rem; color:#666; text-transform:uppercase; letter-spacing:1px;" data-i18n="ref_title">Reference Controls</h2>
+        <div class="ref-controls-container">
+            <div class="toggle-wrapper" id="charToggleBox">
+                <div class="toggle-header">
+                    <label style="margin:0; color:var(--text-color); cursor:pointer;" for="useRefChar" data-i18n="ref_char">🔒 人物 (Ref)</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="useRefChar" onchange="toggleRefPanel('char')">
+                        <span class="slider purple"></span>
+                    </label>
+                </div>
+                <div id="charControls" class="hidden-controls">
+                    <div style="display:flex; gap:10px; margin-bottom:8px;">
+                        <label style="font-weight:normal;"><input type="checkbox" id="charFace" checked onchange="updateJSON()"> <span data-i18n="ref_face">樣貌</span></label>
+                        <label style="font-weight:normal;"><input type="checkbox" id="charBody" checked onchange="updateJSON()"> <span data-i18n="ref_body">身型</span></label>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" id="charIdxStart" style="width:40px; padding:4px;" placeholder="#" oninput="updateJSON()">
+                        <span>-</span>
+                        <input type="number" id="charIdxEnd" style="width:40px; padding:4px;" placeholder="#" oninput="updateJSON()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="toggle-wrapper" id="outfitToggleBox">
+                <div class="toggle-header">
+                    <label style="margin:0; color:var(--text-color); cursor:pointer;" for="useRefOutfit" data-i18n="ref_outfit">👗 服裝 (Ref)</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="useRefOutfit" onchange="toggleRefPanel('outfit')">
+                        <span class="slider teal"></span>
+                    </label>
+                </div>
+                <div id="outfitControls" class="hidden-controls">
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.8rem;">Img:</span>
+                        <input type="number" id="outfitIdxStart" style="width:40px; padding:4px;" placeholder="#" oninput="updateJSON()">
+                        <span>-</span>
+                        <input type="number" id="outfitIdxEnd" style="width:40px; padding:4px;" placeholder="#" oninput="updateJSON()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="toggle-wrapper" id="envToggleBox">
+                <div class="toggle-header">
+                    <label style="margin:0; color:var(--text-color); cursor:pointer;" for="useRefEnv" data-i18n="ref_env">🏞️ 環境 (Ref)</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="useRefEnv" onchange="toggleRefPanel('env')">
+                        <span class="slider orange"></span>
+                    </label>
+                </div>
+                <div id="envControls" class="hidden-controls">
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:0.8rem;">Img:</span>
+                        <input type="number" id="envIdxStart" style="width:40px; padding:4px;" placeholder="#" oninput="updateJSON()">
+                        <span>-</span>
+                        <input type="number" id="envIdxEnd" style="width:40px; padding:4px;" placeholder="#" oninput="updateJSON()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('subject')" data-i18n="tab_subject">人物</button>
+            <button class="tab-btn" onclick="switchTab('apparel')" data-i18n="tab_apparel">服裝</button>
+            <button class="tab-btn" onclick="switchTab('env')" data-i18n="tab_env">環境</button>
+            <button class="tab-btn" onclick="switchTab('photo')" data-i18n="tab_photo">攝影</button>
+            <button class="tab-btn" onclick="switchTab('neg')" data-i18n="tab_neg">負面</button>
+        </div>
+
+        <div id="subject" class="tab-content active">
+            <div class="mode-selector">
+                <button class="mode-btn active" id="btnSingle" onclick="setSubjectMode('single')" data-i18n="mode_single">👤 單人</button>
+                <button class="mode-btn" id="btnMulti" onclick="setSubjectMode('multi')" data-i18n="mode_multi">👥 多人</button>
+            </div>
+            <div id="multiCountBox" style="display:none; margin-bottom: 15px;">
+                <label data-i18n="lbl_count">人物數量:</label>
+                <input type="number" id="charCount" value="2" min="2" max="10" onchange="updateMultiMode()" style="width:100px;">
+            </div>
+            <div id="subjectContainer"></div>
+        </div>
+
+        <div id="apparel" class="tab-content"><div id="apparelContainer"></div></div>
+        <div id="env" class="tab-content"><div id="envContainer"></div></div>
+        <div id="photo" class="tab-content"><div id="photoContainer"></div></div>
+        <div id="neg" class="tab-content"><div id="negContainer"></div></div>
+    </div>
+
+    <div class="preview-panel">
+        <h2 style="color: #ccc;">JSON Output Preview</h2>
+        <pre id="jsonOutput"></pre>
+        <button class="copy-btn" onclick="copyToClipboard()" data-i18n="btn_copy">📋 複製 JSON 代碼</button>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'nano_banana_presets_v4';
+        let currentLang = 'tw'; // Default Language
+        
+        // 🌟 I18N DICTIONARY (Interface & Presets)
+        const DICTIONARY = {
+            tw: {
+                // UI
+                storage_label: "💾 設定 (Storage):", select_preset: "-- 選擇已存設定 --", btn_load: "📂 讀取", btn_save: "💾 儲存",
+                ref_title: "REFERENCE CONTROLS", ref_char: "🔒 人物 (Ref)", ref_outfit: "👗 服裝 (Ref)", ref_env: "🏞️ 環境 (Ref)",
+                ref_face: "樣貌", ref_body: "身型",
+                tab_subject: "人物", tab_apparel: "服裝", tab_env: "環境", tab_photo: "攝影", tab_neg: "負面",
+                mode_single: "👤 單人", mode_multi: "👥 多人", lbl_count: "人物數量:", btn_copy: "📋 複製 JSON 代碼",
+                lbl_pos: "位置", lbl_gender: "性別", lbl_age: "年齡", lbl_desc: "描述", lbl_app: "外貌特徵", lbl_held: "手持物品", lbl_pose: "姿勢", lbl_expr: "表情",
+                lbl_onepiece: "連身裝/裙", lbl_top: "上衣", lbl_bottom: "下身", lbl_legs: "腿部/襪子", lbl_shoes: "鞋子", lbl_acc: "配件",
+                lbl_envtype: "場景類型", lbl_envloc: "地點", lbl_envfg: "前景/遮擋", lbl_envweather: "天氣/氛圍", lbl_envfurn: "傢俱與道具", lbl_envbg: "背景",
+                lbl_frame: "取景 (Frame)", lbl_persp: "視角 (Angle)", lbl_light: "光線", lbl_color: "調色/膠片", lbl_fx: "視覺特效", lbl_cam: "相機參數", lbl_focus: "視覺焦點", lbl_tags: "風格標籤",
+                modal_title: "選擇: ", 
+                // PRESET CATEGORIES (TW)
+                cat_role: "1. 角色身份", cat_style: "2. 風格/氛圍", cat_ethnicity: "3. 種族/外貌",
+                cat_haircolor: "1. 髮色", cat_hairstyle: "2. 髮型", cat_eyes: "3. 眼睛", cat_face: "4. 臉部", cat_makeup: "5. 妝容", cat_skin: "6. 皮膚", cat_body: "7. 身材",
+                cat_pose_stand: "1. 站姿", cat_pose_sit: "2. 坐姿與蹲姿", cat_pose_lie: "3. 躺姿與臥姿", cat_pose_expr: "4. 表情與手勢", cat_pose_life: "5. 生活互動",
+                cat_expr_pos: "1. 正面情緒", cat_expr_mood: "2. 氛圍與情緒", cat_expr_subtle: "3. 細微互動", cat_expr_drama: "4. 強烈情緒",
+                cat_one_dress: "1. 裙裝", cat_one_suit: "2. 連身衣", cat_one_uni: "3. 制服", cat_one_sleep: "4. 睡衣",
+                cat_top_cas: "1. 休閒", cat_top_form: "2. 正式", cat_top_sport: "3. 運動", cat_top_in: "4. 內搭",
+                cat_bot_skirt: "1. 裙裝", cat_bot_cas: "2. 長褲(休閒)", cat_bot_form: "3. 長褲(正式)", cat_bot_short: "4. 短褲",
+                cat_loc_in: "1. 室內", cat_loc_out: "2. 室外",
+                cat_bg_stu: "1. 棚拍純色", cat_bg_abs: "2. 抽象虛化",
+                cat_w_nat: "1. 自然天氣", cat_w_vibe: "2. 特殊氛圍",
+                cat_fg_blur: "1. 虛化遮擋", cat_fg_obj: "2. 物件遮擋",
+                cat_l_nat: "1. 自然光", cat_l_art: "2. 人造光/影棚",
+                cat_c_film: "1. 膠片模擬", cat_c_tone: "2. 色調風格",
+                cat_cam_ap: "1. 光圈/景深", cat_cam_lens: "2. 鏡頭焦段"
+            },
+            cn: {
+                storage_label: "💾 设定 (Storage):", select_preset: "-- 选择已存设定 --", btn_load: "📂 读取", btn_save: "💾 储存",
+                ref_title: "REFERENCE CONTROLS", ref_char: "🔒 人物 (Ref)", ref_outfit: "👗 服装 (Ref)", ref_env: "🏞️ 环境 (Ref)",
+                ref_face: "样貌", ref_body: "身型",
+                tab_subject: "人物", tab_apparel: "服装", tab_env: "环境", tab_photo: "摄影", tab_neg: "负面",
+                mode_single: "👤 单人", mode_multi: "👥 多人", lbl_count: "人物数量:", btn_copy: "📋 复制 JSON 代码",
+                lbl_pos: "位置", lbl_gender: "性别", lbl_age: "年龄", lbl_desc: "描述", lbl_app: "外貌特征", lbl_held: "手持物品", lbl_pose: "姿势", lbl_expr: "表情",
+                lbl_onepiece: "连身装/裙", lbl_top: "上衣", lbl_bottom: "下身", lbl_legs: "腿部/袜子", lbl_shoes: "鞋子", lbl_acc: "配件",
+                lbl_envtype: "场景类型", lbl_envloc: "地点", lbl_envfg: "前景/遮挡", lbl_envweather: "天气/氛围", lbl_envfurn: "家具与道具", lbl_envbg: "背景",
+                lbl_frame: "取景 (Frame)", lbl_persp: "视角 (Angle)", lbl_light: "光线", lbl_color: "调色/胶片", lbl_fx: "视觉特效", lbl_cam: "相机参数", lbl_focus: "视觉焦点", lbl_tags: "风格标签",
+                modal_title: "选择: ",
+                // Categories CN
+                cat_role: "1. 角色身份", cat_style: "2. 风格/氛围", cat_ethnicity: "3. 种族/外貌",
+                cat_haircolor: "1. 发色", cat_hairstyle: "2. 发型", cat_eyes: "3. 眼睛", cat_face: "4. 脸部", cat_makeup: "5. 妆容", cat_skin: "6. 皮肤", cat_body: "7. 身材",
+                cat_pose_stand: "1. 站姿", cat_pose_sit: "2. 坐姿与蹲姿", cat_pose_lie: "3. 躺姿与卧姿", cat_pose_expr: "4. 表情与手势", cat_pose_life: "5. 生活互动",
+                cat_expr_pos: "1. 正面情绪", cat_expr_mood: "2. 氛围与情绪", cat_expr_subtle: "3. 细微互动", cat_expr_drama: "4. 强烈情绪",
+                cat_one_dress: "1. 裙装", cat_one_suit: "2. 连身衣", cat_one_uni: "3. 制服", cat_one_sleep: "4. 睡衣",
+                cat_top_cas: "1. 休闲", cat_top_form: "2. 正式", cat_top_sport: "3. 运动", cat_top_in: "4. 内搭",
+                cat_bot_skirt: "1. 裙装", cat_bot_cas: "2. 长裤(休闲)", cat_bot_form: "3. 长裤(正式)", cat_bot_short: "4. 短裤",
+                cat_loc_in: "1. 室内", cat_loc_out: "2. 室外",
+                cat_bg_stu: "1. 棚拍纯色", cat_bg_abs: "2. 抽象虚化",
+                cat_w_nat: "1. 自然天气", cat_w_vibe: "2. 特殊氛围",
+                cat_fg_blur: "1. 虚化遮挡", cat_fg_obj: "2. 物件遮挡",
+                cat_l_nat: "1. 自然光", cat_l_art: "2. 人造光/影棚",
+                cat_c_film: "1. 胶片模拟", cat_c_tone: "2. 色调风格",
+                cat_cam_ap: "1. 光圈/景深", cat_cam_lens: "2. 镜头焦段"
+            },
+            en: {
+                storage_label: "💾 Storage:", select_preset: "-- Select Preset --", btn_load: "📂 Load", btn_save: "💾 Save",
+                ref_title: "REFERENCE CONTROLS", ref_char: "🔒 Character (Ref)", ref_outfit: "👗 Outfit (Ref)", ref_env: "🏞️ Env (Ref)",
+                ref_face: "Face", ref_body: "Body",
+                tab_subject: "Subject", tab_apparel: "Apparel", tab_env: "Environment", tab_photo: "Photography", tab_neg: "Negative",
+                mode_single: "👤 Single", mode_multi: "👥 Multi", lbl_count: "Count:", btn_copy: "📋 Copy JSON",
+                lbl_pos: "Position", lbl_gender: "Gender", lbl_age: "Age", lbl_desc: "Description", lbl_app: "Appearance", lbl_held: "Held Items", lbl_pose: "Pose", lbl_expr: "Expression",
+                lbl_onepiece: "One-piece", lbl_top: "Top", lbl_bottom: "Bottom", lbl_legs: "Legs/Socks", lbl_shoes: "Shoes", lbl_acc: "Accessories",
+                lbl_envtype: "Scene Type", lbl_envloc: "Location", lbl_envfg: "Foreground", lbl_envweather: "Weather", lbl_envfurn: "Props", lbl_envbg: "Background",
+                lbl_frame: "Framing", lbl_persp: "Angle", lbl_light: "Lighting", lbl_color: "Color Grading", lbl_fx: "Effects", lbl_cam: "Camera", lbl_focus: "Focus", lbl_tags: "Style Tags",
+                modal_title: "Select: ",
+                // Categories EN
+                cat_role: "1. Identity/Role", cat_style: "2. Style/Vibe", cat_ethnicity: "3. Ethnicity",
+                cat_haircolor: "1. Hair Color", cat_hairstyle: "2. Hairstyle", cat_eyes: "3. Eyes", cat_face: "4. Face", cat_makeup: "5. Makeup", cat_skin: "6. Skin", cat_body: "7. Body",
+                cat_pose_stand: "1. Standing", cat_pose_sit: "2. Sitting/Squatting", cat_pose_lie: "3. Lying/Reclining", cat_pose_expr: "4. Expressions/Gestures", cat_pose_life: "5. Interactions",
+                cat_expr_pos: "1. Positive", cat_expr_mood: "2. Mood/Vibe", cat_expr_subtle: "3. Subtle", cat_expr_drama: "4. Dramatic",
+                cat_one_dress: "1. Dresses", cat_one_suit: "2. Bodysuits", cat_one_uni: "3. Uniforms", cat_one_sleep: "4. Sleepwear",
+                cat_top_cas: "1. Casual", cat_top_form: "2. Formal", cat_top_sport: "3. Sport", cat_top_in: "4. Inner/Lounge",
+                cat_bot_skirt: "1. Skirts", cat_bot_cas: "2. Pants (Casual)", cat_bot_form: "3. Pants (Formal)", cat_bot_short: "4. Shorts",
+                cat_loc_in: "1. Indoor", cat_loc_out: "2. Outdoor",
+                cat_bg_stu: "1. Studio", cat_bg_abs: "2. Abstract",
+                cat_w_nat: "1. Natural", cat_w_vibe: "2. Vibe",
+                cat_fg_blur: "1. Bokeh/Framing", cat_fg_obj: "2. Object Framing",
+                cat_l_nat: "1. Natural Light", cat_l_art: "2. Artificial/Studio",
+                cat_c_film: "1. Film Looks", cat_c_tone: "2. Color Tones",
+                cat_cam_ap: "1. Aperture", cat_cam_lens: "2. Lens"
+            },
+            jp: {
+                storage_label: "💾 保存 (Storage):", select_preset: "-- 設定を選択 --", btn_load: "📂 ロード", btn_save: "💾 保存",
+                ref_title: "参照コントロール", ref_char: "🔒 人物 (Ref)", ref_outfit: "👗 衣装 (Ref)", ref_env: "🏞️ 背景 (Ref)",
+                ref_face: "顔", ref_body: "体型",
+                tab_subject: "人物", tab_apparel: "服装", tab_env: "環境", tab_photo: "撮影", tab_neg: "除外",
+                mode_single: "👤 1人", mode_multi: "👥 複数", lbl_count: "人数:", btn_copy: "📋 JSONをコピー",
+                lbl_pos: "位置", lbl_gender: "性別", lbl_age: "年齢", lbl_desc: "特徴", lbl_app: "外見", lbl_held: "持ち物", lbl_pose: "ポーズ", lbl_expr: "表情",
+                lbl_onepiece: "ワンピース", lbl_top: "トップス", lbl_bottom: "ボトムス", lbl_legs: "足元/靴下", lbl_shoes: "靴", lbl_acc: "アクセ",
+                lbl_envtype: "シーン", lbl_envloc: "場所", lbl_envfg: "前景/遮蔽", lbl_envweather: "天気/雰囲気", lbl_envfurn: "家具/小物", lbl_envbg: "背景",
+                lbl_frame: "構図 (Frame)", lbl_persp: "アングル", lbl_light: "照明", lbl_color: "色調", lbl_fx: "エフェクト", lbl_cam: "カメラ設定", lbl_focus: "焦点", lbl_tags: "スタイル",
+                modal_title: "選択: ",
+                // Categories JP
+                cat_role: "1. 役割/職業", cat_style: "2. スタイル/雰囲気", cat_ethnicity: "3. 人種/外見",
+                cat_haircolor: "1. 髪色", cat_hairstyle: "2. 髪型", cat_eyes: "3. 目", cat_face: "4. 顔立ち", cat_makeup: "5. メイク", cat_skin: "6. 肌", cat_body: "7. 体型",
+                cat_pose_stand: "1. 立ちポーズ", cat_pose_sit: "2. 座り/しゃがみ", cat_pose_lie: "3. 寝ポーズ", cat_pose_expr: "4. 表情/手振り", cat_pose_life: "5. 日常動作",
+                cat_expr_pos: "1. ポジティブ", cat_expr_mood: "2. 雰囲気/ムード", cat_expr_subtle: "3. 些細な仕草", cat_expr_drama: "4. ドラマチック",
+                cat_one_dress: "1. ドレス/ワンピ", cat_one_suit: "2. ボディスーツ", cat_one_uni: "3. 制服", cat_one_sleep: "4. 寝間着",
+                cat_top_cas: "1. カジュアル", cat_top_form: "2. フォーマル", cat_top_sport: "3. スポーツ", cat_top_in: "4. インナー",
+                cat_bot_skirt: "1. スカート", cat_bot_cas: "2. パンツ(日常)", cat_bot_form: "3. パンツ(正装)", cat_bot_short: "4. ショートパンツ",
+                cat_loc_in: "1. 屋内", cat_loc_out: "2. 屋外",
+                cat_bg_stu: "1. スタジオ", cat_bg_abs: "2. 抽象/ボケ",
+                cat_w_nat: "1. 自然気象", cat_w_vibe: "2. 特殊な雰囲気",
+                cat_fg_blur: "1. 前ボケ", cat_fg_obj: "2. 物体越しの視点",
+                cat_l_nat: "1. 自然光", cat_l_art: "2. 人工光/照明",
+                cat_c_film: "1. フィルム風", cat_c_tone: "2. 色調スタイル",
+                cat_cam_ap: "1. 絞り/被写界深度", cat_cam_lens: "2. レンズ焦点距離"
+            },
+            kr: {
+                storage_label: "💾 저장 (Storage):", select_preset: "-- 설정 선택 --", btn_load: "📂 로드", btn_save: "💾 저장",
+                ref_title: "REFERENCE CONTROLS", ref_char: "🔒 캐릭터 (Ref)", ref_outfit: "👗 의상 (Ref)", ref_env: "🏞️ 환경 (Ref)",
+                ref_face: "얼굴", ref_body: "체형",
+                tab_subject: "인물", tab_apparel: "의상", tab_env: "환경", tab_photo: "촬영", tab_neg: "부정형",
+                mode_single: "👤 1인", mode_multi: "👥 다인", lbl_count: "인원:", btn_copy: "📋 JSON 복사",
+                lbl_pos: "위치", lbl_gender: "성별", lbl_age: "나이", lbl_desc: "설명", lbl_app: "외모", lbl_held: "소지품", lbl_pose: "포즈", lbl_expr: "표정",
+                lbl_onepiece: "원피스", lbl_top: "상의", lbl_bottom: "하의", lbl_legs: "다리/양말", lbl_shoes: "신발", lbl_acc: "액세서리",
+                lbl_envtype: "장소 유형", lbl_envloc: "장소", lbl_envfg: "전경/가림", lbl_envweather: "날씨/분위기", lbl_envfurn: "가구/소품", lbl_envbg: "배경",
+                lbl_frame: "프레임", lbl_persp: "앵글", lbl_light: "조명", lbl_color: "색감", lbl_fx: "효과", lbl_cam: "카메라", lbl_focus: "초점", lbl_tags: "스타일",
+                modal_title: "선택: ",
+                // Categories KR
+                cat_role: "1. 역할/직업", cat_style: "2. 스타일/분위기", cat_ethnicity: "3. 인종/외모",
+                cat_haircolor: "1. 머리색", cat_hairstyle: "2. 헤어스타일", cat_eyes: "3. 눈", cat_face: "4. 얼굴", cat_makeup: "5. 메이크업", cat_skin: "6. 피부", cat_body: "7. 체형",
+                cat_pose_stand: "1. 서있는 포즈", cat_pose_sit: "2. 앉은 포즈", cat_pose_lie: "3. 누운 포즈", cat_pose_expr: "4. 표정/제스처", cat_pose_life: "5. 상호작용",
+                cat_expr_pos: "1. 긍정적", cat_expr_mood: "2. 분위기", cat_expr_subtle: "3. 미묘한 감정", cat_expr_drama: "4. 강렬한 감정",
+                cat_one_dress: "1. 드레스/원피스", cat_one_suit: "2. 바디수트", cat_one_uni: "3. 제복/유니폼", cat_one_sleep: "4. 잠옷",
+                cat_top_cas: "1. 캐주얼", cat_top_form: "2. 포멀", cat_top_sport: "3. 스포츠", cat_top_in: "4. 이너웨어",
+                cat_bot_skirt: "1. 스커트", cat_bot_cas: "2. 바지(캐주얼)", cat_bot_form: "3. 바지(정장)", cat_bot_short: "4. 반바지",
+                cat_loc_in: "1. 실내", cat_loc_out: "2. 실외",
+                cat_bg_stu: "1. 스튜디오", cat_bg_abs: "2. 추상/보케",
+                cat_w_nat: "1. 자연 날씨", cat_w_vibe: "2. 분위기",
+                cat_fg_blur: "1. 전경 흐림", cat_fg_obj: "2. 물체 프레이밍",
+                cat_l_nat: "1. 자연광", cat_l_art: "2. 인공광",
+                cat_c_film: "1. 필름 룩", cat_c_tone: "2. 색조",
+                cat_cam_ap: "1. 조리개", cat_cam_lens: "2. 렌즈"
+            },
+            es: {
+                storage_label: "💾 Ajustes:", select_preset: "-- Seleccionar --", btn_load: "📂 Cargar", btn_save: "💾 Guardar",
+                ref_title: "CONTROLES DE REFERENCIA", ref_char: "🔒 Personaje (Ref)", ref_outfit: "👗 Atuendo (Ref)", ref_env: "🏞️ Entorno (Ref)",
+                ref_face: "Cara", ref_body: "Cuerpo",
+                tab_subject: "Sujeto", tab_apparel: "Ropa", tab_env: "Entorno", tab_photo: "Fotografía", tab_neg: "Negativo",
+                mode_single: "👤 Solo", mode_multi: "👥 Múltiple", lbl_count: "Cantidad:", btn_copy: "📋 Copiar JSON",
+                lbl_pos: "Posición", lbl_gender: "Género", lbl_age: "Edad", lbl_desc: "Descripción", lbl_app: "Apariencia", lbl_held: "Objetos", lbl_pose: "Pose", lbl_expr: "Expresión",
+                lbl_onepiece: "Vestido/Mono", lbl_top: "Superior", lbl_bottom: "Inferior", lbl_legs: "Piernas", lbl_shoes: "Zapatos", lbl_acc: "Accesorios",
+                lbl_envtype: "Tipo Escena", lbl_envloc: "Ubicación", lbl_envfg: "Primer Plano", lbl_envweather: "Clima", lbl_envfurn: "Accesorios", lbl_envbg: "Fondo",
+                lbl_frame: "Encuadre", lbl_persp: "Ángulo", lbl_light: "Iluminación", lbl_color: "Color", lbl_fx: "Efectos", lbl_cam: "Cámara", lbl_focus: "Enfoque", lbl_tags: "Estilo",
+                modal_title: "Seleccionar: ",
+                // Categories ES
+                cat_role: "1. Identidad/Rol", cat_style: "2. Estilo/Vibe", cat_ethnicity: "3. Etnia",
+                cat_haircolor: "1. Color de pelo", cat_hairstyle: "2. Peinado", cat_eyes: "3. Ojos", cat_face: "4. Cara", cat_makeup: "5. Maquillaje", cat_skin: "6. Piel", cat_body: "7. Cuerpo",
+                cat_pose_stand: "1. De pie", cat_pose_sit: "2. Sentado", cat_pose_lie: "3. Acostado", cat_pose_expr: "4. Expresiones", cat_pose_life: "5. Interacciones",
+                cat_expr_pos: "1. Positivo", cat_expr_mood: "2. Estado de ánimo", cat_expr_subtle: "3. Sutil", cat_expr_drama: "4. Dramático",
+                cat_one_dress: "1. Vestidos", cat_one_suit: "2. Bodysuits", cat_one_uni: "3. Uniformes", cat_one_sleep: "4. Ropa de dormir",
+                cat_top_cas: "1. Casual", cat_top_form: "2. Formal", cat_top_sport: "3. Deporte", cat_top_in: "4. Interior",
+                cat_bot_skirt: "1. Faldas", cat_bot_cas: "2. Pantalones (Casual)", cat_bot_form: "3. Pantalones (Formal)", cat_bot_short: "4. Pantalones cortos",
+                cat_loc_in: "1. Interior", cat_loc_out: "2. Exterior",
+                cat_bg_stu: "1. Estudio", cat_bg_abs: "2. Abstracto",
+                cat_w_nat: "1. Natural", cat_w_vibe: "2. Ambiente",
+                cat_fg_blur: "1. Bokeh", cat_fg_obj: "2. Marco de objeto",
+                cat_l_nat: "1. Luz natural", cat_l_art: "2. Artificial",
+                cat_c_film: "1. Cine", cat_c_tone: "2. Tonos",
+                cat_cam_ap: "1. Apertura", cat_cam_lens: "2. Lente"
+            }
+        };
+
+        // 🌟 PRESET TRANSLATION MAPPING (THE CORE DATA)
+        // This function dynamically generates the presets based on language
+        function getPresets(lang) {
+            const isEn = lang === 'en';
+            const k = DICTIONARY[lang]; // 讀取介面標題翻譯 (如: "1. 角色身份")
+
+            // 🌟 1. 定義多語言字典 (這裡集中管理 '描述' 的翻譯)
+            const T_DESC = {
+                // --- 角色身份 ---
+                'University student': { tw: '大學生', cn: '大学生', jp: '大学生', kr: '대학생', es: 'Estudiante universitaria' },
+                'Office lady': { tw: 'OL/職場女性', cn: 'OL/职场女性', jp: 'オフィスレディ', kr: '오피스 레이디', es: 'Oficinista' },
+                'Fashion model': { tw: '時尚模特', cn: '时尚模特', jp: 'ファッションモデル', kr: '패션 모델', es: 'Modelo de moda' },
+                'Instagram influencer': { tw: '網紅/KOL', cn: '网红/KOL', jp: 'インフルエンサー', kr: '인플루언서', es: 'Influencer' },
+                'K-pop idol': { tw: '韓國偶像', cn: '韩国偶像', jp: 'K-POPアイドル', kr: 'K-pop 아이돌', es: 'Ídolo de K-pop' },
+                'Barista': { tw: '咖啡師', cn: '咖啡师', jp: 'バリスタ', kr: '바리스타', es: 'Barista' },
+                'Nurse': { tw: '護士', cn: '护士', jp: '看護師', kr: '간호사', es: 'Enfermera' },
+                'Fitness trainer': { tw: '健身教練', cn: '健身教练', jp: 'フィットネストレーナー', kr: '피트니스 트레이너', es: 'Entrenadora física' },
+                'Business woman': { tw: '商務女性', cn: '商务女性', jp: 'ビジネスウーマン', kr: '비즈니스 여성', es: 'Mujer de negocios' },
+                'Artist': { tw: '藝術家/畫家', cn: '艺术家/画家', jp: 'アーティスト', kr: '예술가', es: 'Artista' },
+                'Traveler': { tw: '旅行者', cn: '旅行者', jp: '旅行者', kr: '여행자', es: 'Viajera' },
+                'Bride': { tw: '新娘', cn: '新娘', jp: '花嫁', kr: '신부', es: 'Novia' },
+                'Flight attendant': { tw: '空服員', cn: '空乘人员', jp: '客室乗務員', kr: '승무원', es: 'Azafata' },
+
+                // --- 風格氛圍 ---
+                'Girl next door': { tw: '鄰家女孩', cn: '邻家女孩', jp: '隣の家の少女', kr: '옆집 소녀', es: 'La chica de al lado' },
+                'Elegant and classy': { tw: '優雅氣質', cn: '优雅气质', jp: 'エレガント', kr: '우아한', es: 'Elegante' },
+                'Cool and edgy': { tw: '酷帥/前衛', cn: '酷帅/前卫', jp: 'クール＆エッジ', kr: '쿨하고 엣지있는', es: 'Genial y vanguardista' },
+                'Cute and cheerful': { tw: '可愛活潑', cn: '可爱活泼', jp: 'キュート＆元気', kr: '귀엽고 발랄한', es: 'Linda y alegre' },
+                'Mature and sophisticated': { tw: '成熟知性', cn: '成熟知性', jp: '成熟した洗練', kr: '성숙하고 세련된', es: 'Madura y sofisticada' },
+                'Sporty and energetic': { tw: '運動活力', cn: '运动活力', jp: 'スポーティー', kr: '스포티한', es: 'Deportiva' },
+                'Bohemian style': { tw: '波西米亞風', cn: '波西米亚风', jp: 'ボヘミアン', kr: '보헤미안 스타일', es: 'Estilo bohemio' },
+                'Cyberpunk aesthetic': { tw: '賽博龐克風', cn: '赛博朋克风', jp: 'サイバーパンク', kr: '사이버펑크', es: 'Estética cyberpunk' },
+                'Vintage 90s style': { tw: '90年代復古風', cn: '90年代复古风', jp: '90年代ヴィンテージ', kr: '90년대 빈티지', es: 'Estilo años 90' },
+                'Minimalist style': { tw: '極簡風格', cn: '极简风格', jp: 'ミニマリスト', kr: '미니멀리즘', es: 'Estilo minimalista' },
+
+                // --- 種族外貌 ---
+                'Japanese woman': { tw: '日本女性', cn: '日本女性', jp: '日本人女性', kr: '일본 여성', es: 'Mujer japonesa' },
+                'Korean woman': { tw: '韓國女性', cn: '韩国女性', jp: '韓国人女性', kr: '한국 여성', es: 'Mujer coreana' },
+                'Chinese woman': { tw: '中國女性', cn: '中国女性', jp: '中国人女性', kr: '중국 여성', es: 'Mujer china' },
+                'Taiwanese woman': { tw: '台灣女性', cn: '台湾女性', jp: '台湾人女性', kr: '대만 여성', es: 'Mujer taiwanesa' },
+                'Hong Kong woman': { tw: '香港女性', cn: '香港女性', jp: '香港人女性', kr: '홍콩 여성', es: 'Mujer de Hong Kong' },
+                'Mixed race': { tw: '混血兒', cn: '混血儿', jp: 'ハーフ/混血', kr: '혼혈', es: 'Mestiza' },
+                'Asian woman': { tw: '亞洲女性', cn: '亚洲女性', jp: 'アジア人女性', kr: '아시아 여성', es: 'Mujer asiática' },
+                'Caucasian woman': { tw: '白人女性', cn: '白人女性', jp: '白人女性', kr: '백인 여성', es: 'Mujer caucásica' },
+                'Latina woman': { tw: '拉丁裔女性', cn: '拉丁裔女性', jp: 'ラテン系女性', kr: '라틴계 여성', es: 'Mujer latina' }
+            };
+            // 🌟 在 T_DESC 結束的大括號 }; 後面貼上這個：
+            const T_APP = {
+                // --- 1. 髮色 ---
+                'Black hair': { tw: '黑色髮', cn: '黑色发', jp: '黒髪', kr: '검은 머리', es: 'Cabello negro' },
+                'Dark brown hair': { tw: '深褐髮', cn: '深褐发', jp: 'ダークブラウンの髪', kr: '짙은 갈색 머리', es: 'Cabello castaño oscuro' },
+                'Chestnut brown hair': { tw: '栗子色髮', cn: '栗子色发', jp: '栗色の髪', kr: '밤색 머리', es: 'Cabello castaño' },
+                'Blonde hair': { tw: '金髮', cn: '金发', jp: '金髪', kr: '금발', es: 'Cabello rubio' },
+                'Platinum blonde hair': { tw: '白金髮', cn: '白金发', jp: 'プラチナブロンド', kr: '플래티넘 금발', es: 'Rubio platino' },
+                'Red hair': { tw: '紅髮', cn: '红发', jp: '赤毛', kr: '붉은 머리', es: 'Cabello pelirrojo' },
+                'Grey hair': { tw: '灰白髮', cn: '灰白发', jp: '白髪/グレーヘア', kr: '회색 머리', es: 'Cabello gris' },
+                'Highlighted hair': { tw: '挑染', cn: '挑染', jp: 'ハイライトヘア', kr: '브릿지 헤어', es: 'Mechas' },
+
+                // --- 2. 髮型 ---
+                'Long straight hair': { tw: '長直髮', cn: '长直发', jp: 'ロングストレート', kr: '긴 생머리', es: 'Pelo largo y liso' },
+                'Wavy hair': { tw: '波浪微捲', cn: '波浪微卷', jp: 'ウェーブヘア', kr: '웨이브 머리', es: 'Pelo ondulado' },
+                'Curly hair': { tw: '捲髮', cn: '卷发', jp: '巻き髪/カーリー', kr: '곱슬머리', es: 'Pelo rizado' },
+                'Short bob cut': { tw: '短髮鮑伯頭', cn: '短发鲍伯头', jp: 'ボブカット', kr: '단발 보브컷', es: 'Corte bob' },
+                'Pixie cut': { tw: '精靈短髮', cn: '精灵短发', jp: 'ピクシーカット', kr: '픽시 컷', es: 'Corte pixie' },
+                'Shoulder-length hair': { tw: '及肩髮', cn: '及肩发', jp: 'セミロング', kr: '어깨 길이 머리', es: 'Pelo hasta los hombros' },
+                'Ponytail': { tw: '單馬尾', cn: '单马尾', jp: 'ポニーテール', kr: '포니테일', es: 'Cola de caballo' },
+                'Messy bun': { tw: '丸子頭', cn: '丸子头', jp: 'お団子ヘア', kr: '똥머리', es: 'Moño despeinado' },
+                'Braided hair': { tw: '編髮', cn: '编发', jp: '三つ編み/編み込み', kr: '땋은 머리', es: 'Pelo trenzado' },
+
+                // --- 3. 眼睛 ---
+                'Dark brown eyes': { tw: '深褐眼', cn: '深褐眼', jp: '焦げ茶色の目', kr: '짙은 갈색 눈', es: 'Ojos marrón oscuro' },
+                'Light brown eyes': { tw: '淺褐眼', cn: '浅褐眼', jp: '明るい茶色の目', kr: '연한 갈색 눈', es: 'Ojos marrón claro' },
+                'Blue eyes': { tw: '藍眼', cn: '蓝眼', jp: '青い目', kr: '푸른 눈', es: 'Ojos azules' },
+                'Green eyes': { tw: '綠眼', cn: '绿眼', jp: '緑の目', kr: '녹색 눈', es: 'Ojos verdes' },
+                'Hazel eyes': { tw: '榛果色眼', cn: '榛果色眼', jp: 'ヘーゼル色の目', kr: '헤이즐 눈', es: 'Ojos color avellana' },
+                'Double eyelids': { tw: '雙眼皮', cn: '双眼皮', jp: '二重まぶた', kr: '쌍꺼풀', es: 'Doble párpado' },
+                'Monolid': { tw: '單眼皮', cn: '单眼皮', jp: '一重まぶた', kr: '무쌍', es: 'Monopárpado' },
+                'Detailed eyelashes': { tw: '細緻睫毛', cn: '细致睫毛', jp: '詳細なまつげ', kr: '섬세한 속눈썹', es: 'Pestañas detalladas' },
+
+                // --- 4. 臉部 ---
+                'Oval face': { tw: '鵝蛋臉', cn: '鹅蛋脸', jp: '卵型の顔', kr: '계란형 얼굴', es: 'Cara ovalada' },
+                'High nose bridge': { tw: '高鼻樑', cn: '高鼻梁', jp: '高い鼻筋', kr: '높은 콧대', es: 'Puente nasal alto' },
+                'Plump lips': { tw: '豐滿嘴唇', cn: '丰满嘴唇', jp: 'ふっくらした唇', kr: '도톰한 입술', es: 'Labios carnosos' },
+                'Sharp jawline': { tw: '清晰下顎線', cn: '清晰下颚线', jp: 'シャープな顎のライン', kr: '날렵한 턱선', es: 'Mandíbula definida' },
+                'Dimples': { tw: '酒窩', cn: '酒窝', jp: 'えくぼ', kr: '보조개', es: 'Hoyuelos' },
+                'Mole under eye': { tw: '淚痣', cn: '泪痣', jp: '泣きぼくろ', kr: '눈 밑 점', es: 'Lunar bajo el ojo' },
+
+                // --- 5. 妝容 ---
+                'No makeup': { tw: '素顏', cn: '素颜', jp: 'すっぴん', kr: '민낯', es: 'Sin maquillaje' },
+                'Natural makeup': { tw: '淡妝', cn: '淡妆', jp: 'ナチュラルメイク', kr: '네추럴 메이크업', es: 'Maquillaje natural' },
+                'Heavy makeup': { tw: '濃妝', cn: '浓妆', jp: '濃いメイク', kr: '진한 메이크업', es: 'Maquillaje cargado' },
+                'Red lipstick': { tw: '紅唇', cn: '红唇', jp: '赤い口紅', kr: '빨간 립스틱', es: 'Labios rojos' },
+                'Glossy lips': { tw: '水光唇', cn: '水光唇', jp: 'グロスリップ', kr: '광택 입술', es: 'Labios brillantes' },
+                'Smoky eyes': { tw: '煙燻妝', cn: '烟熏妆', jp: 'スモーキーアイ', kr: '스모키 화장', es: 'Ojos ahumados' },
+
+                // --- 6. 皮膚 ---
+                'Detailed skin texture': { tw: '真實皮膚紋理', cn: '真实皮肤纹理', jp: '詳細な肌の質感', kr: '디테일한 피부 결', es: 'Textura de piel detallada' },
+                'Visible pores': { tw: '毛孔可見', cn: '毛孔可见', jp: '毛穴が見える', kr: '모공이 보이는', es: 'Poros visibles' },
+                'Dewy skin': { tw: '水光肌', cn: '水光肌', jp: 'ツヤ肌', kr: '물광 피부', es: 'Piel húmeda' },
+                'Pale skin': { tw: '白皙', cn: '白皙', jp: '色白の肌', kr: '하얀 피부', es: 'Piel pálida' },
+                'Tan skin': { tw: '小麥色', cn: '小麦色', jp: '小麦色の肌', kr: '태닝 피부', es: 'Piel bronceada' },
+                'Freckles': { tw: '雀斑', cn: '雀斑', jp: 'そばかす', kr: '주근깨', es: 'Pecas' },
+                'Slightly sweaty': { tw: '微汗', cn: '微汗', jp: '微かに汗ばんだ', kr: '약간 땀에 젖은', es: 'Ligeramente sudorosa' },
+                'Oily skin': { tw: '油亮', cn: '油亮', jp: 'オイリー肌', kr: '기름진 피부', es: 'Piel grasa' },
+
+                // --- 7. 身材 ---
+                'Slender body': { tw: '纖細', cn: '纤细', jp: 'スレンダー', kr: '슬렌더 체형', es: 'Cuerpo esbelto' },
+                'Curvy body': { tw: '曲線', cn: '曲线', jp: 'カーヴィーボディ', kr: '굴곡진 몸매', es: 'Cuerpo con curvas' },
+                'Fit body': { tw: '健美', cn: '健美', jp: '引き締まった体', kr: '탄탄한 몸매', es: 'Cuerpo en forma' },
+                'Toned abs': { tw: '腹肌', cn: '腹肌', jp: '割れた腹筋', kr: '복근', es: 'Abdominales tonificados' },
+                'Broad shoulders': { tw: '寬肩', cn: '宽肩', jp: '広い肩幅', kr: '넓은 어깨', es: 'Hombros anchos' },
+                'Prominent collarbone': { tw: '鎖骨', cn: '锁骨', jp: '目立つ鎖骨', kr: '도드라진 쇄골', es: 'Clavícula prominente' },
+                'Wide hips': { tw: '寬臀', cn: '宽臀', jp: '広い骨盤', kr: '넓은 골반', es: 'Caderas anchas' }
+            };
+            // 🌟 在 T_APP 結束的大括號 }; 後面貼上這個：
+            const T_POSE_EXPR = {
+                // --- 1. 站姿 (Standing) ---
+                'Standing confidently': { tw: '自信站立', cn: '自信站立', jp: '自信に満ちた立ち姿', kr: '자신감 있게 서기', es: 'De pie con confianza' },
+                'Leaning against wall': { tw: '背靠牆', cn: '背靠墙', jp: '壁に寄りかかる', kr: '벽에 기대기', es: 'Apoyada en la pared' },
+                'Hands on hips': { tw: '雙手叉腰', cn: '双手叉腰', jp: '手を腰に当てる', kr: '양손 허리에', es: 'Manos en las caderas' },
+                'Crossed arms': { tw: '雙手抱胸', cn: '双手抱胸', jp: '腕組み', kr: '팔짱 끼기', es: 'Brazos cruzados' },
+                'Turning back': { tw: '回眸', cn: '回眸', jp: '振り返る', kr: '뒤돌아보기', es: 'Mirando hacia atrás' },
+                'Walking towards camera': { tw: '走向鏡頭', cn: '走向镜头', jp: 'カメラに向かって歩く', kr: '카메라를 향해 걷기', es: 'Caminando hacia la cámara' },
+                'One leg forward': { tw: '單腳向前', cn: '单脚向前', jp: '片足を前に出す', kr: '한 발 앞으로', es: 'Una pierna adelante' },
+                'Hand in hair': { tw: '手撥頭髮', cn: '手拨头发', jp: '髪に手を入れる', kr: '머리카락 만지기', es: 'Mano en el cabello' },
+                'Lean forward': { tw: '身體前傾', cn: '身体前倾', jp: '前かがみ', kr: '앞으로 기울이기', es: 'Inclinarse hacia adelante' },
+                'Peace sign': { tw: '比耶', cn: '比耶', jp: 'ピースサイン', kr: '브이 포즈', es: 'Signo de la paz' },
+
+                // --- 2. 坐姿與蹲姿 (Sitting) ---
+                'Sitting on chair': { tw: '坐椅子', cn: '坐椅子', jp: '椅子に座る', kr: '의자에 앉기', es: 'Sentada en silla' },
+                'Sitting on sofa': { tw: '坐沙發', cn: '坐沙发', jp: 'ソファに座る', kr: '소파에 앉기', es: 'Sentada en sofá' },
+                'Sitting on ground': { tw: '席地而坐', cn: '席地而坐', jp: '地面に座る', kr: '바닥에 앉기', es: 'Sentada en el suelo' },
+                'Sitting with knees up': { tw: '抱膝坐', cn: '抱膝坐', jp: '体育座り/膝を抱える', kr: '무릎 안고 앉기', es: 'Sentada abrazando rodillas' },
+                'Cross-legged sitting': { tw: '盤腿坐', cn: '盘腿坐', jp: 'あぐら', kr: '양반다리', es: 'Sentada con piernas cruzadas' },
+                'Asian squat': { tw: '亞洲蹲', cn: '亚洲蹲', jp: 'ヤンキー座り', kr: '쪼그려 앉기', es: 'Sentadilla asiática' },
+                'Sitting on high stool': { tw: '坐高腳椅', cn: '坐高脚椅', jp: 'ハイスツールに座る', kr: '높은 의자에 앉기', es: 'Sentada en taburete alto' },
+                'W-sitting': { tw: '鴨子坐', cn: '鸭子坐', jp: 'ぺたん座り/アヒル座り', kr: 'W자 앉기', es: 'Sentada en W' },
+                'Kneeling': { tw: '跪姿', cn: '跪姿', jp: '膝立ち/正座', kr: '무릎 꿇기', es: 'De rodillas' },
+
+                // --- 3. 躺姿與臥姿 (Lying) ---
+                'Lying on back': { tw: '仰臥', cn: '仰卧', jp: '仰向け', kr: '똑바로 누리기', es: 'Acostada boca arriba' },
+                'Lying on stomach': { tw: '趴臥', cn: '趴卧', jp: 'うつ伏せ', kr: '엎드리기', es: 'Acostada boca abajo' },
+                'Lying on side': { tw: '側臥', cn: '侧卧', jp: '横向きに寝る', kr: '옆으로 눕기', es: 'Acostada de lado' },
+                'Reclining on sofa': { tw: '斜躺沙發', cn: '斜躺沙发', jp: 'ソファにもたれる', kr: '소파에 기대 눕기', es: 'Reclinada en el sofá' },
+                'Curled up': { tw: '蜷縮睡姿', cn: '蜷缩睡姿', jp: '丸まって寝る', kr: '몸을 웅크리기', es: 'Acurrucada' },
+
+                // --- 4. 表情與手勢 (Gestures) ---
+                'Duck face': { tw: '嘟嘴', cn: '嘟嘴', jp: 'アヒル口', kr: '입술 내밀기', es: 'Boca de pato' },
+                'Pouty face': { tw: '生氣嘟嘴', cn: '生气嘟嘴', jp: '拗ねた顔', kr: '뾰로통한 얼굴', es: 'Haciendo pucheros' },
+                'Winking': { tw: '眨眼', cn: '眨眼', jp: 'ウインク', kr: '윙크', es: 'Guiñando un ojo' },
+                'Finger heart': { tw: '手指愛心', cn: '手指爱心', jp: '指ハート', kr: '손가락 하트', es: 'Corazón con los dedos' },
+                'Hands on cheeks': { tw: '捧臉', cn: '捧脸', jp: '頬に手を当てる', kr: '꽃받침 포즈', es: 'Manos en las mejillas' },
+                'Covering mouth': { tw: '掩嘴笑', cn: '掩嘴笑', jp: '口元を隠す', kr: '입 가리고 웃기', es: 'Cubriendo la boca' },
+                'Finger on lips': { tw: '嘘手勢', cn: '嘘手势', jp: '指を唇に当てる(内緒)', kr: '쉿 포즈', es: 'Dedo en los labios' },
+                'Adjusting glasses': { tw: '推眼鏡', cn: '推眼镜', jp: '眼鏡を直す', kr: '안경 고쳐 쓰기', es: 'Ajustando gafas' },
+                'Salute': { tw: '敬禮', cn: '敬礼', jp: '敬礼', kr: '거수경례', es: 'Saludo militar' },
+                'Cat paw pose': { tw: '貓爪手勢', cn: '猫爪手势', jp: '猫の手ポーズ', kr: '고양이 손 포즈', es: 'Pose de pata de gato' },
+
+                // --- 5. 生活互動 (Life) ---
+                'Holding phone': { tw: '拿手機', cn: '拿手机', jp: 'スマホを持つ', kr: '핸드폰 들기', es: 'Sosteniendo teléfono' },
+                'Looking at phone': { tw: '看手機', cn: '看手机', jp: 'スマホを見る', kr: '핸드폰 보기', es: 'Mirando el teléfono' },
+                'Holding coffee cup': { tw: '拿咖啡杯', cn: '拿咖啡杯', jp: 'コーヒーカップを持つ', kr: '커피잔 들기', es: 'Sosteniendo taza de café' },
+                'Holding bag': { tw: '拿包包', cn: '拿包包', jp: 'バッグを持つ', kr: '가방 들기', es: 'Sosteniendo bolso' },
+                'Stretching': { tw: '伸懶腰', cn: '伸懒腰', jp: '伸びをする', kr: '기지개 켜기', es: 'Estirándose' },
+                'Fixing hair': { tw: '整理頭髮', cn: '整理头发', jp: '髪を直す', kr: '머리 정돈하기', es: 'Arreglando el cabello' },
+                'Reaching hand out': { tw: '伸出手', cn: '伸出手', jp: '手を差し伸べる', kr: '손 뻗기', es: 'Extendiendo la mano' },
+                'Looking at watch': { tw: '看手錶', cn: '看手表', jp: '時計を見る', kr: '시계 보기', es: 'Mirando el reloj' },
+
+                // --- 6. 表情 (Expressions) - 正面 ---
+                'Gentle smile': { tw: '溫柔微笑', cn: '温柔微笑', jp: '優しい微笑み', kr: '온화한 미소', es: 'Sonrisa suave' },
+                'Grinning': { tw: '露齒笑', cn: '露齿笑', jp: 'ニカっと笑う', kr: '활짝 웃기', es: 'Sonriendo ampliamente' },
+                'Laughing': { tw: '大笑', cn: '大笑', jp: '笑う', kr: '크게 웃기', es: 'Riendo' },
+                'Cheerful': { tw: '開朗', cn: '开朗', jp: '快活な', kr: '쾌활한', es: 'Alegre' },
+                'Playful wink': { tw: '俏皮眨眼', cn: '俏皮眨眼', jp: '遊び心のあるウインク', kr: '장난스러운 윙크', es: 'Guiño juguetón' },
+                'Confident look': { tw: '自信神情', cn: '自信神情', jp: '自信に満ちた表情', kr: '자신감 있는 표정', es: 'Mirada segura' },
+                'Radiant smile': { tw: '燦爛笑容', cn: '灿烂笑容', jp: '輝く笑顔', kr: '환한 미소', es: 'Sonrisa radiante' },
+                'Excited expression': { tw: '興奮', cn: '兴奋', jp: '興奮した表情', kr: '신난 표정', es: 'Expresión emocionada' },
+
+                // --- 7. 表情 (Expressions) - 氛圍 ---
+                'Seductive gaze': { tw: '誘惑眼神', cn: '诱惑眼神', jp: '魅惑的な視線', kr: '유혹적인 눈빛', es: 'Mirada seductora' },
+                'Smirk': { tw: '壞笑', cn: '坏笑', jp: 'ニヤリと笑う', kr: '썩소', es: 'Sonrisa engreída' },
+                'Shy / Blushing': { tw: '害羞/臉紅', cn: '害羞/脸红', jp: '恥ずかしがる/赤面', kr: '부끄러움/홍조', es: 'Tímida / Sonrojada' },
+                'Serious': { tw: '嚴肅', cn: '严肃', jp: '真剣な', kr: '진지한', es: 'Seria' },
+                'Neutral expression': { tw: '厭世臉', cn: '厌世脸', jp: '無表情/ニュートラル', kr: '무표정', es: 'Expresión neutral' },
+                'Cold gaze': { tw: '冰冷眼神', cn: '冰冷眼神', jp: '冷たい視線', kr: '차가운 시선', es: 'Mirada fría' },
+                'Dreamy look': { tw: '夢幻', cn: '梦幻', jp: '夢見るような', kr: '몽환적인', es: 'Mirada soñadora' },
+                'Melancholy': { tw: '憂鬱', cn: '忧郁', jp: '憂鬱な', kr: '우울한', es: 'Melancólica' },
+                'Bored look': { tw: '無聊', cn: '无聊', jp: '退屈そうな', kr: '지루한 표정', es: 'Mirada aburrida' },
+
+                // --- 8. 表情 (Expressions) - 細微 ---
+                'Looking at camera': { tw: '直視鏡頭', cn: '直视镜头', jp: 'カメラ目線', kr: '카메라 응시', es: 'Mirando a la cámara' },
+                'Looking away': { tw: '望向別處', cn: '望向别处', jp: '他所見', kr: '다른 곳 보기', es: 'Mirando hacia otro lado' },
+                'Looking down': { tw: '低頭', cn: '低头', jp: 'うつむく', kr: '아래 보기', es: 'Mirando hacia abajo' },
+                'Looking up': { tw: '抬頭', cn: '抬头', jp: '見上げる', kr: '위 보기', es: 'Mirando hacia arriba' },
+                'Side glance': { tw: '斜視', cn: '斜视', jp: '横目', kr: '곁눈질', es: 'Mirada de reojo' },
+                'Eyes closed': { tw: '閉眼', cn: '闭眼', jp: '目を閉じる', kr: '눈 감기', es: 'Ojos cerrados' },
+                'Biting lip': { tw: '咬嘴唇', cn: '咬嘴唇', jp: '唇を噛む', kr: '입술 깨물기', es: 'Morderse el labio' },
+                'Tongue out': { tw: '吐舌頭', cn: '吐舌头', jp: '舌を出す', kr: '혀 내밀기', es: 'Sacando la lengua' },
+
+                // --- 9. 表情 (Expressions) - 強烈 ---
+                'Surprised': { tw: '驚訝', cn: '惊讶', jp: '驚く', kr: '놀람', es: 'Sorprendida' },
+                'Shocked face': { tw: '震驚', cn: '震惊', jp: 'ショックを受けた顔', kr: '충격받은 표정', es: 'Cara de shock' },
+                'Crying': { tw: '哭泣', cn: '哭泣', jp: '泣く', kr: '울음', es: 'Llorando' },
+                'Tearing up': { tw: '眼泛淚光', cn: '眼泛泪光', jp: '涙ぐむ', kr: '글썽거림', es: 'Ojos llorosos' },
+                'Angry': { tw: '生氣', cn: '生气', jp: '怒る', kr: '화남', es: 'Enojada' },
+                'Frowning': { tw: '皺眉', cn: '皱眉', jp: '眉をひそめる', kr: '찌푸림', es: 'Frunciendo el ceño' },
+                'Disgusted face': { tw: '嫌棄', cn: '嫌弃', jp: '嫌悪感', kr: '혐오하는 표정', es: 'Cara de disgusto' },
+                'Screaming': { tw: '尖叫', cn: '尖叫', jp: '叫ぶ', kr: '비명', es: 'Gritando' },
+                'Scared expression': { tw: '害怕', cn: '害怕', jp: '怯える', kr: '겁먹은 표정', es: 'Expresión asustada' }
+            };
+            // 🌟 在 T_POSE_EXPR 結束的大括號 }; 後面貼上這個：
+            const T_APPAREL = {
+                // --- 1. 連身裙 (Dresses) ---
+                'Floral summer dress': { tw: '碎花洋裝', cn: '碎花洋装', jp: '花柄のサマードレス', kr: '꽃무늬 원피스', es: 'Vestido floral de verano' },
+                'Little black dress': { tw: '黑色小禮服', cn: '黑色小礼服', jp: 'リトルブラックドレス', kr: '미니 블랙 드레스', es: 'Pequeño vestido negro' },
+                'White sundress': { tw: '白色吊帶裙', cn: '白色吊带裙', jp: '白いサンドレス', kr: '화이트 선드레스', es: 'Vestido blanco de verano' },
+                'Evening gown': { tw: '晚禮服', cn: '晚礼服', jp: 'イブニングドレス', kr: '이브닝 드레스', es: 'Vestido de noche' },
+                'Cocktail dress': { tw: '雞尾酒禮服', cn: '鸡尾酒礼服', jp: 'カクテルドレス', kr: '칵테일 드레스', es: 'Vestido de cóctel' },
+                'Maxi dress': { tw: '長裙', cn: '长裙', jp: 'マキシドレス', kr: '맥시 드레스', es: 'Vestido largo' },
+                'Bodycon dress': { tw: '包臀裙', cn: '包臀裙', jp: 'ボディコンワンピ', kr: '바디콘 드레스', es: 'Vestido ajustado' },
+                'Wrap dress': { tw: '裹身裙', cn: '裹身裙', jp: 'ラップドレス', kr: '랩 드레스', es: 'Vestido cruzado' },
+                'Slip dress': { tw: '絲綢裙', cn: '丝绸裙', jp: 'スリップドレス', kr: '슬립 드레스', es: 'Vestido lencero' },
+                'Knitted dress': { tw: '針織裙', cn: '针织裙', jp: 'ニットワンピ', kr: '니트 원피스', es: 'Vestido de punto' },
+                'Off-shoulder dress': { tw: '露肩洋裝', cn: '露肩洋装', jp: 'オフショルダーワンピ', kr: '오프숄더 원피스', es: 'Vestido sin hombros' },
+
+                // --- 2. 連身衣 (Bodysuits/Swimwear) ---
+                'Denim jumpsuit': { tw: '牛仔連身褲', cn: '牛仔连身裤', jp: 'デニムジャンプスーツ', kr: '데님 점프수트', es: 'Mono vaquero' },
+                'Yoga bodysuit': { tw: '瑜珈連身衣', cn: '瑜珈连身衣', jp: 'ヨガボディスーツ', kr: '요가 바디수트', es: 'Body de yoga' },
+                'Gym set': { tw: '健身套裝', cn: '健身套装', jp: 'ジムウェアセット', kr: '트레이닝 세트', es: 'Conjunto de gimnasio' },
+                'Bunny girl suit': { tw: '兔女郎', cn: '兔女郎', jp: 'バニーガール', kr: '바니걸 의상', es: 'Traje de conejita' },
+                'Racing queen suit': { tw: '賽車女郎', cn: '赛车女郎', jp: 'レースクイーン', kr: '레이싱 모델 의상', es: 'Traje de chica de carreras' },
+                'School swimsuit': { tw: '學校泳裝', cn: '学校泳装', jp: 'スクール水着', kr: '학교 수영복', es: 'Traje de baño escolar' },
+                'Bikini set': { tw: '比基尼', cn: '比基尼', jp: 'ビキニ', kr: '비키니', es: 'Bikini' },
+                'One-piece swimsuit': { tw: '連身泳衣', cn: '连身泳衣', jp: 'ワンピース水着', kr: '원피스 수영복', es: 'Traje de baño de una pieza' },
+                'Lace bodysuit': { tw: '蕾絲連身衣', cn: '蕾丝连身衣', jp: 'レースボディスーツ', kr: '레이스 바디수트', es: 'Body de encaje' },
+                'Leather bodysuit': { tw: '皮衣', cn: '皮衣', jp: 'レザーボディスーツ', kr: '가죽 바디수트', es: 'Body de cuero' },
+
+                // --- 3. 制服 (Uniforms) ---
+                'Maid outfit': { tw: '女僕裝', cn: '女仆装', jp: 'メイド服', kr: '메이드복', es: 'Traje de sirvienta' },
+                'Cheongsam/Qipao': { tw: '旗袍', cn: '旗袍', jp: 'チャイナドレス', kr: '치파오', es: 'Cheongsam' },
+                'Kimono': { tw: '和服', cn: '和服', jp: '着物', kr: '기모노', es: 'Kimono' },
+                'Yukata': { tw: '浴衣', cn: '浴衣', jp: '浴衣', kr: '유카타', es: 'Yukata' },
+                'Hanfu': { tw: '漢服', cn: '汉服', jp: '漢服', kr: '한푸', es: 'Hanfu' },
+                'School uniform': { tw: '水手服', cn: '水手服', jp: 'セーラー服/制服', kr: '교복', es: 'Uniforme escolar' },
+                'Nurse uniform': { tw: '護士服', cn: '护士服', jp: 'ナース服', kr: '간호사복', es: 'Uniforme de enfermera' },
+                'Police uniform': { tw: '女警', cn: '女警', jp: '婦人警官', kr: '경찰 제복', es: 'Uniforme de policía' },
+                'Flight attendant uniform': { tw: '空姐', cn: '空姐', jp: 'CAの制服', kr: '승무원 유니폼', es: 'Uniforme de azafata' },
+                'Office suit set': { tw: 'OL套裝', cn: 'OL套装', jp: 'オフィススーツ', kr: '오피스룩', es: 'Traje de oficina' },
+
+                // --- 4. 睡衣 (Sleepwear) ---
+                'Silk pajamas': { tw: '絲綢睡衣', cn: '丝绸睡衣', jp: 'シルクパジャマ', kr: '실크 파자마', es: 'Pijama de seda' },
+                'Oversized t-shirt': { tw: '下衣失蹤', cn: '下衣失踪', jp: 'オーバーサイズTシャツ', kr: '오버핏 티셔츠', es: 'Camiseta oversize' },
+                'Bathrobe': { tw: '浴袍', cn: '浴袍', jp: 'バスローブ', kr: '목욕 가운', es: 'Albornoz' },
+                'Lingerie set': { tw: '內衣套裝', cn: '内衣套装', jp: 'ランジェリー', kr: '란제리 세트', es: 'Conjunto de lencería' },
+                'Camisole': { tw: '吊帶背心裙', cn: '吊带背心裙', jp: 'キャミソール', kr: '캐미솔', es: 'Camisola' },
+
+                // --- 5. 上衣 (Tops) ---
+                'White T-shirt': { tw: '白T恤', cn: '白T恤', jp: '白Tシャツ', kr: '흰색 티셔츠', es: 'Camiseta blanca' },
+                'Oversized hoodie': { tw: '帽T', cn: '帽T', jp: 'パーカー', kr: '후드티', es: 'Sudadera con capucha' },
+                'Crop top': { tw: '短版上衣', cn: '短版上衣', jp: 'クロップドトップス', kr: '크롭탑', es: 'Top corto' },
+                'Tank top': { tw: '背心', cn: '背心', jp: 'タンクトップ', kr: '탱크탑', es: 'Camiseta sin mangas' },
+                'Knitted sweater': { tw: '毛衣', cn: '毛衣', jp: 'ニットセーター', kr: '니트 스웨터', es: 'Suéter de punto' },
+                'Denim jacket': { tw: '牛仔外套', cn: '牛仔外套', jp: 'デニムジャケット', kr: '청자켓', es: 'Chaqueta vaquera' },
+                'Cardigan': { tw: '針織外套', cn: '针织外套', jp: 'カーディガン', kr: '가디건', es: 'Cárdigan' },
+                'Plaid shirt': { tw: '格紋襯衫', cn: '格纹衬衫', jp: 'チェックシャツ', kr: '체크 셔츠', es: 'Camisa a cuadros' },
+                'Turtle neck sweater': { tw: '高領毛衣', cn: '高领毛衣', jp: 'タートルネック', kr: '터틀넥', es: 'Suéter de cuello alto' },
+                'Off-shoulder top': { tw: '露肩上衣', cn: '露肩上衣', jp: 'オフショルダートップス', kr: '오프숄더 상의', es: 'Top sin hombros' },
+                'White button-up shirt': { tw: '白襯衫', cn: '白衬衫', jp: '白シャツ', kr: '흰색 와이셔츠', es: 'Camisa blanca con botones' },
+                'Silk blouse': { tw: '絲質襯衫', cn: '丝质衬衫', jp: 'シルクブラウス', kr: '실크 블라우스', es: 'Blusa de seda' },
+                'Suit jacket': { tw: '西裝外套', cn: '西装外套', jp: 'スーツジャケット', kr: '정장 자켓', es: 'Chaqueta de traje' },
+                'Blazer': { tw: '休閒西裝', cn: '休闲西装', jp: 'ブレザー', kr: '블레이저', es: 'Blazer' },
+                'Tweed jacket': { tw: '小香風外套', cn: '小香风外套', jp: 'ツイードジャケット', kr: '트위드 자켓', es: 'Chaqueta de tweed' },
+                'Satin blouse': { tw: '緞面襯衫', cn: '缎面衬衫', jp: 'サテンブラウス', kr: '새틴 블라우스', es: 'Blusa de satén' },
+                'V-neck blouse': { tw: 'V領衫', cn: 'V领衫', jp: 'Vネックブラウス', kr: 'V넥 블라우스', es: 'Blusa con cuello en V' },
+                'Sports bra': { tw: '運動內衣', cn: '运动内衣', jp: 'スポーツブラ', kr: '스포츠 브라', es: 'Sujetador deportivo' },
+                'Yoga top': { tw: '瑜珈上衣', cn: '瑜珈上衣', jp: 'ヨガトップス', kr: '요가 상의', es: 'Top de yoga' },
+                'Windbreaker': { tw: '防風外套', cn: '防风外套', jp: 'ウィンドブレーカー', kr: '바람막이', es: 'Cortavientos' },
+                'Gym tank': { tw: '健身背心', cn: '健身背心', jp: 'ジム用タンクトップ', kr: '헬스 나시', es: 'Camiseta de gimnasio' },
+                'Rash guard': { tw: '防磨衣', cn: '防磨衣', jp: 'ラッシュガード', kr: '래쉬가드', es: 'Camiseta de protección solar' },
+                'Track jacket': { tw: '運動夾克', cn: '运动夹克', jp: 'トラックジャケット', kr: '트랙 자켓', es: 'Chaqueta deportiva' },
+                'Tube top': { tw: '平口小可愛', cn: '平口小可爱', jp: 'チューブトップ', kr: '튜브탑', es: 'Top tubo' },
+                'Lace bralette': { tw: '蕾絲內衣', cn: '蕾丝内衣', jp: 'レースブラレット', kr: '레이스 브라렛', es: 'Bralette de encaje' },
+                'Pajama top': { tw: '睡衣上衣', cn: '睡衣上衣', jp: 'パジャマトップ', kr: '파자마 상의', es: 'Top de pijama' },
+                'Oversized shirt': { tw: '男友風襯衫', cn: '男友风衬衫', jp: '彼シャツ', kr: '오버핏 셔츠', es: 'Camisa oversize' },
+
+                // --- 6. 下身 (Bottoms) ---
+                'Mini skirt': { tw: '迷你裙', cn: '迷你裙', jp: 'ミニスカート', kr: '미니스커트', es: 'Minifalda' },
+                'Pleated skirt': { tw: '百褶裙', cn: '百褶裙', jp: 'プリーツスカート', kr: '플리츠 스커트', es: 'Falda plisada' },
+                'Pencil skirt': { tw: '鉛筆裙', cn: '铅笔裙', jp: 'ペンシルスカート', kr: '펜슬 스커트', es: 'Falda lápiz' },
+                'Denim skirt': { tw: '牛仔裙', cn: '牛仔裙', jp: 'デニムスカート', kr: '청치마', es: 'Falda vaquera' },
+                'Long flowy skirt': { tw: '飄逸長裙', cn: '飘逸长裙', jp: 'ロングスカート', kr: '롱 스커트', es: 'Falda larga' },
+                'High-waisted skirt': { tw: '高腰裙', cn: '高腰裙', jp: 'ハイウエストスカート', kr: '하이웨스트 스커트', es: 'Falda de cintura alta' },
+                'Leather skirt': { tw: '皮裙', cn: '皮裙', jp: 'レザースカート', kr: '가죽 치마', es: 'Falda de cuero' },
+                'Slit skirt': { tw: '開衩裙', cn: '开衩裙', jp: 'スリットスカート', kr: '트임 스커트', es: 'Falda con abertura' },
+                'Tulle skirt': { tw: '紗裙', cn: '纱裙', jp: 'チュールスカート', kr: '튤 스커트', es: 'Falda de tul' },
+                'Skinny jeans': { tw: '緊身褲', cn: '紧身裤', jp: 'スキニージーンズ', kr: '스키니진', es: 'Vaqueros ajustados' },
+                'Baggy jeans': { tw: '老爹褲', cn: '老爹裤', jp: 'バギージーンズ', kr: '배기진', es: 'Vaqueros anchos' },
+                'Ripped jeans': { tw: '破洞褲', cn: '破洞裤', jp: 'ダメージジーンズ', kr: '찢어진 청바지', es: 'Vaqueros rotos' },
+                'Wide-leg pants': { tw: '寬褲', cn: '宽裤', jp: 'ワイドパンツ', kr: '와이드 팬츠', es: 'Pantalones anchos' },
+                'Cargo pants': { tw: '工裝褲', cn: '工装裤', jp: 'カーゴパンツ', kr: '카고 바지', es: 'Pantalones cargo' },
+                'Leather pants': { tw: '皮褲', cn: '皮裤', jp: 'レザーパンツ', kr: '가죽 바지', es: 'Pantalones de cuero' },
+                'Suit trousers': { tw: '西裝褲', cn: '西装裤', jp: 'スラックス', kr: '정장 바지', es: 'Pantalones de traje' },
+                'Chinos': { tw: '卡其褲', cn: '卡其裤', jp: 'チノパン', kr: '면바지', es: 'Pantalones chinos' },
+                'Straight-leg pants': { tw: '直筒褲', cn: '直筒裤', jp: 'ストレートパンツ', kr: '일자 바지', es: 'Pantalones rectos' },
+                'High-waisted trousers': { tw: '高腰西褲', cn: '高腰西裤', jp: 'ハイウエストパンツ', kr: '하이웨스트 팬츠', es: 'Pantalones de cintura alta' },
+                'Denim shorts': { tw: '牛仔短褲', cn: '牛仔短裤', jp: 'デニムショートパンツ', kr: '청반바지', es: 'Pantalones cortos vaqueros' },
+                'Hot pants': { tw: '熱褲', cn: '热裤', jp: 'ホットパンツ', kr: '핫팬츠', es: 'Pantalones cortos muy cortos' },
+                'Bike shorts': { tw: '單車褲', cn: '单车裤', jp: 'バイカーショーツ', kr: '바이커 쇼츠', es: 'Pantalones cortos de ciclista' },
+                'Yoga leggings': { tw: '瑜珈褲', cn: '瑜珈裤', jp: 'レギンス', kr: '레깅스', es: 'Leggings de yoga' },
+                'Gym shorts': { tw: '運動短褲', cn: '运动短裤', jp: 'ジムショーツ', kr: '트레이닝 반바지', es: 'Pantalones cortos de gimnasio' },
+                'Sweatpants': { tw: '棉褲', cn: '棉裤', jp: 'スウェットパンツ', kr: '트레이닝 바지', es: 'Pantalones de chándal' },
+
+                // --- 7. 襪子與絲襪 (Legwear) ---
+                'Sheer black pantyhose': { tw: '黑絲襪', cn: '黑丝袜', jp: '黒ストッキング', kr: '검정 스타킹', es: 'Medias negras transparentes' },
+                'Nude pantyhose': { tw: '膚色絲襪', cn: '肤色丝袜', jp: '肌色ストッキング', kr: '살색 스타킹', es: 'Medias color carne' },
+                'Fishnet tights': { tw: '網襪', cn: '网袜', jp: '網タイツ', kr: '망사 스타킹', es: 'Medias de rejilla' },
+                'Patterned tights': { tw: '圖案絲襪', cn: '图案丝袜', jp: '柄タイツ', kr: '패턴 스타킹', es: 'Medias con estampado' },
+                'White ankle socks': { tw: '白短襪', cn: '白短袜', jp: '白のアンクルソックス', kr: '흰색 발목 양말', es: 'Calcetines tobilleros blancos' },
+                'Knee-high socks': { tw: '過膝襪', cn: '过膝袜', jp: 'ニーハイソックス', kr: '무릎 양말', es: 'Calcetines hasta la rodilla' },
+                'Thigh-high socks': { tw: '大腿襪', cn: '大腿袜', jp: 'サイハイソックス', kr: '허벅지 양말', es: 'Calcetines hasta el muslo' },
+                'Slouch socks': { tw: '泡泡襪', cn: '泡泡袜', jp: 'ルーズソックス', kr: '루즈 삭스', es: 'Calcetines caídos' },
+                'Invisible socks': { tw: '隱形襪', cn: '隐形袜', jp: 'フットカバー', kr: '페이크 삭스', es: 'Calcetines invisibles' },
+                'Sport socks': { tw: '運動襪', cn: '运动袜', jp: 'スポーツソックス', kr: '스포츠 양말', es: 'Calcetines deportivos' },
+
+                // --- 8. 鞋子 (Shoes) ---
+                'High heels': { tw: '高跟鞋', cn: '高跟鞋', jp: 'ハイヒール', kr: '하이힐', es: 'Tacones altos' },
+                'Stilettos': { tw: '細跟', cn: '细跟', jp: 'ピンヒール', kr: '스틸레토', es: 'Tacones de aguja' },
+                'Platform heels': { tw: '厚底', cn: '厚底', jp: '厚底ヒール', kr: '통굽 힐', es: 'Tacones de plataforma' },
+                'Strappy sandals': { tw: '細帶涼鞋', cn: '细带凉鞋', jp: 'ストラップサンダル', kr: '스트랩 샌들', es: 'Sandalias de tiras' },
+                'Ankle strap heels': { tw: '繫帶高跟', cn: '系带高跟', jp: 'アンクルストラップ', kr: '발목 스트랩 힐', es: 'Tacones con correa al tobillo' },
+                'Ankle boots': { tw: '踝靴', cn: '踝靴', jp: 'ショートブーツ', kr: '앵클 부츠', es: 'Botines' },
+                'Knee-high boots': { tw: '長靴', cn: '长靴', jp: 'ロングブーツ', kr: '롱부츠', es: 'Botas hasta la rodilla' },
+                'Over-the-knee boots': { tw: '過膝靴', cn: '过膝靴', jp: 'ニーハイブーツ', kr: '오버니 부츠', es: 'Botas por encima de la rodilla' },
+                'Combat boots': { tw: '馬丁靴', cn: '马丁靴', jp: 'コンバットブーツ', kr: '워커', es: 'Botas de combate' },
+                'White sneakers': { tw: '小白鞋', cn: '小白鞋', jp: '白スニーカー', kr: '흰색 스니커즈', es: 'Zapatillas blancas' },
+                'Loafers': { tw: '樂福鞋', cn: '乐福鞋', jp: 'ローファー', kr: '로퍼', es: 'Mocasines' },
+                'Ballet flats': { tw: '芭蕾平底', cn: '芭蕾平底', jp: 'バレエシューズ', kr: '플랫 슈즈', es: 'Bailarinas' },
+                'Canvas shoes': { tw: '帆布鞋', cn: '帆布鞋', jp: 'キャンバスシューズ', kr: '캔버스화', es: 'Zapatos de lona' },
+                'Flip-flops': { tw: '夾腳拖', cn: '夹脚拖', jp: 'ビーチサンダル', kr: '쪼리', es: 'Chanclas' },
+
+                // --- 9. 配件 (Accessories) ---
+                'Baseball cap': { tw: '棒球帽', cn: '棒球帽', jp: 'ベースボールキャップ', kr: '야구 모자', es: 'Gorra de béisbol' },
+                'Beanie': { tw: '毛帽', cn: '毛帽', jp: 'ニット帽', kr: '비니', es: 'Gorro de lana' },
+                'Bucket hat': { tw: '漁夫帽', cn: '渔夫帽', jp: 'バケットハット', kr: '버킷햇', es: 'Sombrero de pescador' },
+                'Straw hat': { tw: '草帽', cn: '草帽', jp: '麦わら帽子', kr: '밀짚 모자', es: 'Sombrero de paja' },
+                'Beret': { tw: '貝雷帽', cn: '贝雷帽', jp: 'ベレー帽', kr: '베레모', es: 'Boina' },
+                'Hair ribbon': { tw: '髮帶', cn: '发带', jp: 'ヘアリボン', kr: '머리 리본', es: 'Cinta para el pelo' },
+                'Hair clip': { tw: '髮夾', cn: '发夹', jp: 'ヘアクリップ', kr: '머리핀', es: 'Horquilla' },
+                'Sunglasses': { tw: '太陽眼鏡', cn: '太阳眼镜', jp: 'サングラス', kr: '선글라스', es: 'Gafas de sol' },
+                'Reading glasses': { tw: '眼鏡', cn: '眼镜', jp: '眼鏡', kr: '안경', es: 'Gafas' },
+                'Rimless glasses': { tw: '無框眼鏡', cn: '无框眼镜', jp: 'ふちなし眼鏡', kr: '무테 안경', es: 'Gafas sin montura' },
+                'Oversized glasses': { tw: '大框眼鏡', cn: '大框眼镜', jp: '大きめメガネ', kr: '큰 안경', es: 'Gafas grandes' },
+                'Choker': { tw: '頸圈', cn: '颈圈', jp: 'チョーカー', kr: '초커', es: 'Gargantilla' },
+                'Pearl necklace': { tw: '珍珠項鍊', cn: '珍珠项链', jp: 'パールネックレス', kr: '진주 목걸이', es: 'Collar de perlas' },
+                'Gold hoop earrings': { tw: '金屬圈耳環', cn: '金属圈耳环', jp: 'フープピアス', kr: '링 귀걸이', es: 'Pendientes de aro' },
+                'Diamond studs': { tw: '鑽石耳釘', cn: '钻石耳钉', jp: 'ダイヤのピアス', kr: '다이아 귀걸이', es: 'Pendientes de diamante' },
+                'Silver bracelet': { tw: '銀手鍊', cn: '银手链', jp: 'シルバーブレスレット', kr: '은팔찌', es: 'Pulsera de plata' },
+                'Luxury watch': { tw: '名錶', cn: '名表', jp: '高級時計', kr: '명품 시계', es: 'Reloj de lujo' },
+                'Leather belt': { tw: '皮帶', cn: '皮带', jp: 'レザーベルト', kr: '가죽 벨트', es: 'Cinturón de cuero' },
+                'Scarf': { tw: '圍巾', cn: '围巾', jp: 'スカーフ/マフラー', kr: '스카프', es: 'Bufanda' },
+                'Handbag': { tw: '手提包', cn: '手提包', jp: 'ハンドバッグ', kr: '핸드백', es: 'Bolso de mano' },
+                'Backpack': { tw: '後背包', cn: '后背包', jp: 'リュック', kr: '백팩', es: 'Mochila' },
+                'Tote bag': { tw: '托特包', cn: '托特包', jp: 'トートバッグ', kr: '토트백', es: 'Bolso tote' }
+            };
+            // 🌟 在 T_APPAREL 結束的大括號 }; 後面貼上這個：
+            const T_ENV = {
+                // --- 1. 地點 (Location) - 室內 ---
+                'Modern living room': { tw: '現代客廳', cn: '现代客厅', jp: 'モダンなリビング', kr: '모던 거실', es: 'Sala de estar moderna' },
+                'Cozy bedroom': { tw: '溫馨臥室', cn: '温馨卧室', jp: '居心地の良い寝室', kr: '아늑한 침실', es: 'Dormitorio acogedor' },
+                'Luxury hotel room': { tw: '豪華酒店', cn: '豪华酒店', jp: '高級ホテルの一室', kr: '럭셔리 호텔 객실', es: 'Habitación de hotel de lujo' },
+                'Sunlit kitchen': { tw: '陽光廚房', cn: '阳光厨房', jp: '日当たりの良いキッチン', kr: '햇살 가득한 주방', es: 'Cocina soleada' },
+                'Coffee shop': { tw: '咖啡店', cn: '咖啡店', jp: 'カフェ', kr: '카페', es: 'Cafetería' },
+                'Library': { tw: '圖書館', cn: '图书馆', jp: '図書館', kr: '도서관', es: 'Biblioteca' },
+                'Classroom': { tw: '教室', cn: '教室', jp: '教室', kr: '교실', es: 'Aula' },
+                'Art gallery': { tw: '畫廊', cn: '画廊', jp: 'アートギャラリー', kr: '미술관', es: 'Galería de arte' },
+                'Photography studio': { tw: '攝影棚', cn: '摄影棚', jp: '写真スタジオ', kr: '사진 스튜디오', es: 'Estudio de fotografía' },
+
+                // --- 2. 地點 (Location) - 室外 ---
+                'Busy city street': { tw: '城市街道', cn: '城市街道', jp: '賑やかな街路', kr: '번화가', es: 'Calle concurrida' },
+                'Rooftop at night': { tw: '夜晚屋頂', cn: '夜晚屋顶', jp: '夜の屋上', kr: '밤의 옥상', es: 'Azotea de noche' },
+                'Cherry blossom park': { tw: '櫻花公園', cn: '樱花公园', jp: '桜の公園', kr: '벚꽃 공원', es: 'Parque de cerezos' },
+                'Beach at sunset': { tw: '夕陽海灘', cn: '夕阳海滩', jp: '夕暮れのビーチ', kr: '해질녘 해변', es: 'Playa al atardecer' },
+                'Luxury yacht deck': { tw: '遊艇甲板', cn: '游艇甲板', jp: '高級ヨットのデッキ', kr: '호화 요트 갑판', es: 'Cubierta de yate de lujo' },
+                'Old alleyway': { tw: '復古小巷', cn: '复古小巷', jp: '古い路地', kr: '오래된 골목', es: 'Callejón antiguo' },
+                'Garden with flowers': { tw: '花園', cn: '花园', jp: '花のある庭', kr: '꽃이 있는 정원', es: 'Jardín con flores' },
+
+                // --- 3. 傢俱與道具 (Furniture & Props) ---
+                'Leather sofa': { tw: '皮沙發', cn: '皮沙发', jp: '革のソファ', kr: '가죽 소파', es: 'Sofá de cuero' },
+                'King size bed': { tw: '大床', cn: '大床', jp: 'キングサイズベッド', kr: '킹사이즈 침대', es: 'Cama king size' },
+                'Vintage armchair': { tw: '復古椅', cn: '复古椅', jp: 'ヴィンテージチェア', kr: '빈티지 안락의자', es: 'Sillón vintage' },
+                'Bar stool': { tw: '吧台椅', cn: '吧台椅', jp: 'バースツール', kr: '바 스툴', es: 'Taburete de bar' },
+                'Bathtub': { tw: '浴缸', cn: '浴缸', jp: 'バスタブ', kr: '욕조', es: 'Bañera' },
+                'Full-length mirror': { tw: '全身鏡', cn: '全身镜', jp: '全身鏡', kr: '전신 거울', es: 'Espejo de cuerpo entero' },
+                'Bouquet of roses': { tw: '玫瑰花束', cn: '玫瑰花束', jp: 'バラの花束', kr: '장미 꽃다발', es: 'Ramo de rosas' },
+                'Vintage camera': { tw: '復古相機', cn: '复古相机', jp: 'ヴィンテージカメラ', kr: '빈티지 카메라', es: 'Cámara vintage' },
+                'Open book': { tw: '打開的書', cn: '打开的书', jp: '開いた本', kr: '펼친 책', es: 'Libro abierto' },
+                'Laptop': { tw: '筆記電腦', cn: '笔记电脑', jp: 'ノートパソコン', kr: '노트북', es: 'Portátil' },
+                'Wine glass': { tw: '酒杯', cn: '酒杯', jp: 'ワイングラス', kr: '와인 잔', es: 'Copa de vino' },
+                'Candles': { tw: '蠟燭', cn: '蜡烛', jp: 'キャンドル', kr: '양초', es: 'Velas' },
+                'Teddy bear': { tw: '泰迪熊', cn: '泰迪熊', jp: 'テディベア', kr: '곰인형', es: 'Oso de peluche' },
+
+                // --- 4. 背景 (Background) ---
+                'Solid white background': { tw: '純白', cn: '纯白', jp: '白背景', kr: '흰색 배경', es: 'Fondo blanco sólido' },
+                'Solid grey background': { tw: '純灰', cn: '纯灰', jp: 'グレー背景', kr: '회색 배경', es: 'Fondo gris sólido' },
+                'Black background': { tw: '純黑', cn: '纯黑', jp: '黒背景', kr: '검은 배경', es: 'Fondo negro' },
+                'Textured wall': { tw: '紋理牆', cn: '纹理墙', jp: '質感のある壁', kr: '질감 있는 벽', es: 'Pared texturizada' },
+                'Bokeh lights': { tw: '散景光點', cn: '散景光点', jp: '玉ボケ', kr: '보케 조명', es: 'Luces bokeh' },
+                'Blurred city lights': { tw: '城市燈光', cn: '城市灯光', jp: 'ぼやけた街の明かり', kr: '흐릿한 도시 불빛', es: 'Luces de ciudad borrosas' },
+                'Gradient color': { tw: '漸變色', cn: '渐变色', jp: 'グラデーション', kr: '그라데이션', es: 'Color degradado' },
+                'Abstract shadows': { tw: '抽象陰影', cn: '抽象阴影', jp: '抽象的な影', kr: '추상적인 그림자', es: 'Sombras abstractas' },
+                'White wall with shadow': { tw: '白牆樹影', cn: '白墙树影', jp: '影のある白壁', kr: '그림자 진 흰 벽', es: 'Pared blanca con sombra' },
+
+                // --- 5. 天氣 (Weather) ---
+                'Golden hour': { tw: '黃金時段', cn: '黄金时段', jp: 'ゴールデンアワー', kr: '골든 아워', es: 'Hora dorada' },
+                'Blue hour': { tw: '藍調時刻', cn: '蓝调时刻', jp: 'ブルーアワー', kr: '블루 아워', es: 'Hora azul' },
+                'Overcast soft light': { tw: '陰天柔光', cn: '阴天柔光', jp: '曇りの柔らかい光', kr: '흐린 날 부드러운 빛', es: 'Luz suave nublada' },
+                'Rainy day': { tw: '雨天', cn: '雨天', jp: '雨の日', kr: '비 오는 날', es: 'Día lluvioso' },
+                'Snowy': { tw: '下雪', cn: '下雪', jp: '雪の日', kr: '눈 오는 날', es: 'Nevado' },
+                'Foggy/Misty': { tw: '霧氣', cn: '雾气', jp: '霧', kr: '안개', es: 'Niebla' },
+                'Cinematic atmosphere': { tw: '電影感', cn: '电影感', jp: '映画のような雰囲気', kr: '영화 같은 분위기', es: 'Atmósfera cinematográfica' },
+                'Dreamy haze': { tw: '夢幻柔焦', cn: '梦幻柔焦', jp: '夢のような霞', kr: '몽환적인 헤이즈', es: 'Neblina de ensueño' },
+                'Cyberpunk neon': { tw: '賽博龐克', cn: '赛博朋克', jp: 'サイバーパンクネオン', kr: '사이버펑크 네온', es: 'Neón cyberpunk' },
+                'Warm and cozy': { tw: '溫暖舒適', cn: '温暖舒适', jp: '暖かく居心地良い', kr: '따뜻하고 아늑한', es: 'Cálido y acogedor' },
+                'Moody and dark': { tw: '情緒暗調', cn: '情绪暗调', jp: 'ムーディーで暗い', kr: '어둡고 분위기 있는', es: 'Melancólico y oscuro' },
+
+                // --- 6. 前景 (Foreground) ---
+                'Blurred flowers in foreground': { tw: '花朵遮擋', cn: '花朵遮挡', jp: '前景のぼやけた花', kr: '전경의 흐릿한 꽃', es: 'Flores borrosas en primer plano' },
+                'Raindrops on glass': { tw: '玻璃雨滴', cn: '玻璃雨滴', jp: 'ガラスの水滴', kr: '유리의 빗방울', es: 'Gotas de lluvia en el cristal' },
+                'Window reflection': { tw: '窗戶反光', cn: '窗户反光', jp: '窓の反射', kr: '창문 반사', es: 'Reflejo de ventana' },
+                'Tree branches': { tw: '樹枝遮擋', cn: '树枝遮挡', jp: '木の枝', kr: '나뭇가지', es: 'Ramas de árbol' },
+                'Sheer curtain': { tw: '薄紗窗簾', cn: '薄纱窗帘', jp: '薄いカーテン', kr: '얇은 커튼', es: 'Cortina transparente' },
+                'Crystal prism effect': { tw: '水晶虹光', cn: '水晶虹光', jp: 'プリズム効果', kr: '크리스탈 프리즘 효과', es: 'Efecto prisma' },
+                'Car window frame': { tw: '車窗框', cn: '车窗框', jp: '車の窓枠', kr: '차 창문 프레임', es: 'Marco de ventana de coche' },
+                'Coffee cup in foreground': { tw: '咖啡杯遮擋', cn: '咖啡杯遮挡', jp: '前景のコーヒーカップ', kr: '전경의 커피잔', es: 'Taza de café en primer plano' },
+                'Mesh fence': { tw: '鐵絲網', cn: '铁丝网', jp: '金網フェンス', kr: '철조망', es: 'Cerca de malla' }
+            };
+            // 🌟 在 T_ENV 結束的大括號 }; 後面貼上這個：
+            const T_PHOTO = {
+                // --- 1. 取景 (Framing) ---
+                'Extreme Close-up': { tw: '特寫細節', cn: '特写细节', jp: '極端なクローズアップ', kr: '초근접 촬영', es: 'Primerísimo primer plano' },
+                'Close-up': { tw: '面部特寫', cn: '面部特写', jp: 'クローズアップ', kr: '클로즈업', es: 'Primer plano' },
+                'Medium shot': { tw: '半身', cn: '半身', jp: 'ミディアムショット', kr: '미디엄 샷', es: 'Plano medio' },
+                'Cowboy shot': { tw: '膝上', cn: '膝上', jp: 'カウボーイショット', kr: '니 샷', es: 'Plano americano' },
+                'Full body shot': { tw: '全身', cn: '全身', jp: 'フルボディショット', kr: '전신 샷', es: 'Plano entero' },
+                'Wide shot': { tw: '廣角', cn: '广角', jp: 'ワイドショット', kr: '와이드 샷', es: 'Plano general' },
+
+                // --- 2. 角度 (Angle) ---
+                'Eye-level shot': { tw: '平視', cn: '平视', jp: 'アイレベル', kr: '눈높이 촬영', es: 'Ángulo normal' },
+                'Low angle': { tw: '仰視', cn: '仰视', jp: 'ローアングル', kr: '로우 앵글', es: 'Ángulo contrapicado' },
+                'High angle': { tw: '俯視', cn: '俯视', jp: 'ハイアングル', kr: 'ハイ 앵글', es: 'Ángulo picado' },
+                'Over-the-shoulder': { tw: '過肩', cn: '过肩', jp: '肩越しショット', kr: '오버 더 숄더', es: 'Plano sobre el hombro' },
+                'Selfie angle': { tw: '自拍', cn: '自拍', jp: '自撮りアングル', kr: '셀카 앵글', es: 'Ángulo selfie' },
+                'Dutch angle': { tw: '傾斜構圖', cn: '倾斜构图', jp: 'ダッチアングル', kr: '더치 앵글', es: 'Plano holandés' },
+
+                // --- 3. 光線 (Lighting) ---
+                'Natural daylight': { tw: '自然日光', cn: '自然日光', jp: '自然光', kr: '자연광', es: 'Luz natural' },
+                'Soft morning light': { tw: '晨光', cn: '晨光', jp: '朝の柔らかい光', kr: '아침 햇살', es: 'Luz suave de la mañana' },
+                'Window light': { tw: '窗邊光', cn: '窗边光', jp: '窓からの光', kr: '창가 빛', es: 'Luz de ventana' },
+                'Dappled sunlight': { tw: '斑駁樹影', cn: '斑驳树影', jp: '木漏れ日', kr: '얼룩덜룩한 햇살', es: 'Luz del sol moteada' },
+                'Studio lighting': { tw: '攝影棚佈光', cn: '摄影棚布光', jp: 'スタジオライティング', kr: '스튜디오 조명', es: 'Iluminación de estudio' },
+                'Softbox lighting': { tw: '柔光箱', cn: '柔光箱', jp: 'ソフトボックス', kr: '소프트박스 조명', es: 'Iluminación softbox' },
+                'Rembrandt lighting': { tw: '倫勃朗光', cn: '伦勃朗光', jp: 'レンブラントライティング', kr: '렘브란트 조명', es: 'Iluminación Rembrandt' },
+                'Cinematic lighting': { tw: '電影感', cn: '电影感', jp: '映画のようなライティング', kr: '영화 같은 조명', es: 'Iluminación cinematográfica' },
+                'Neon lights': { tw: '霓虹燈', cn: '霓虹灯', jp: 'ネオンライト', kr: '네온 조명', es: 'Luces de neón' },
+                'Backlighting': { tw: '逆光', cn: '逆光', jp: '逆光', kr: '역광', es: 'Contraluz' },
+                'Volumetric lighting': { tw: '體積光', cn: '体积光', jp: 'ボリュメトリックライト', kr: '볼류메트릭 조명', es: 'Iluminación volumétrica' },
+
+                // --- 4. 調色與膠片 (Color & Film) ---
+                'Fujifilm Pro 400H': { tw: '清新日系', cn: '清新日系', jp: '富士フィルム風', kr: '후지필름 감성', es: 'Estilo Fujifilm' },
+                'Kodak Portra 400': { tw: '溫暖膚色', cn: '温暖肤色', jp: 'コダックポートラ風', kr: '코닥 포트라 감성', es: 'Estilo Kodak Portra' },
+                'Cinestill 800T': { tw: '電影夜景', cn: '电影夜景', jp: 'シネウスティル風', kr: '씨네스틸 감성', es: 'Estilo Cinestill' },
+                'Polaroid style': { tw: '寶麗來', cn: '宝丽来', jp: 'ポラロイド風', kr: '폴라로이드 스타일', es: 'Estilo Polaroid' },
+                'Cinematic Teal & Orange': { tw: '青橙色調', cn: '青橙色调', jp: 'ティール＆オレンジ', kr: '틸 앤 오렌지', es: 'Teal & Orange' },
+                'Muted tones': { tw: '莫蘭迪色', cn: '莫兰迪色', jp: '落ち着いた色調', kr: '차분한 톤', es: 'Tonos apagados' },
+                'High contrast': { tw: '高反差', cn: '高反差', jp: '高コントラスト', kr: '고대비', es: 'Alto contraste' },
+                'Warm vintage tones': { tw: '復古暖色', cn: '复古暖色', jp: '暖かいヴィンテージトーン', kr: '따뜻한 빈티지 톤', es: 'Tonos vintage cálidos' },
+                'Cool blue tones': { tw: '冷色調', cn: '冷色调', jp: 'クールな青色トーン', kr: '시원한 블루 톤', es: 'Tonos azules fríos' },
+
+                // --- 5. 特效 (FX) ---
+                'Film grain': { tw: '膠卷顆粒', cn: '胶卷颗粒', jp: 'フィルム粒子', kr: '필름 그레인', es: 'Grano de película' },
+                'Light leaks': { tw: '漏光', cn: '漏光', jp: '光漏れ', kr: '빛샘 현상', es: 'Fugas de luz' },
+                'Chromatic aberration': { tw: '色差', cn: '色差', jp: '色収差', kr: '색収差', es: 'Aberración cromática' },
+                'Vignette': { tw: '暗角', cn: '暗角', jp: '口径食/ビネット', kr: '비네팅', es: 'Viñeteado' },
+                'Motion blur': { tw: '動態模糊', cn: '动态模糊', jp: 'モーションブラー', kr: '모션 블러', es: 'Desenfoque de movimiento' },
+                'Lens flare': { tw: '光暈', cn: '光晕', jp: 'レンズフレア', kr: '렌즈 플레어', es: 'Destello de lente' },
+                'Glow effect': { tw: '柔光', cn: '柔光', jp: 'グロー効果', kr: '글로우 효과', es: 'Efecto resplandor' },
+
+                // --- 6. 相機 (Camera) ---
+                'f/1.8': { tw: '大光圈/虛化', cn: '大光圈/虚化', jp: 'f/1.8 (ボケ)', kr: 'f/1.8 (아웃포커싱)', es: 'f/1.8 (Bokeh)' },
+                'f/2.8': { tw: '標準人像', cn: '标准人像', jp: 'f/2.8 (ポートレート)', kr: 'f/2.8 (인물)', es: 'f/2.8 (Retrato)' },
+                'f/8': { tw: '小光圈/清晰', cn: '小光圈/清晰', jp: 'f/8 (シャープ)', kr: 'f/8 (선명함)', es: 'f/8 (Nítido)' },
+                'Shallow depth of field': { tw: '淺景深', cn: '浅景深', jp: '浅い被写界深度', kr: '얕은 심도', es: 'Poca profundidad de campo' },
+                'Bokeh background': { tw: '散景背景', cn: '散景背景', jp: '背景ボケ', kr: '보케 배경', es: 'Fondo bokeh' },
+                '35mm lens': { tw: '人文/小廣角', cn: '人文/小广角', jp: '35mmレンズ', kr: '35mm 렌즈', es: 'Lente de 35mm' },
+                '50mm lens': { tw: '標準視角', cn: '标准视角', jp: '50mmレンズ', kr: '50mm 렌즈', es: 'Lente de 50mm' },
+                '85mm lens': { tw: '人像鏡皇', cn: '人像镜皇', jp: '85mmレンズ', kr: '85mm 렌즈', es: 'Lente de 85mm' },
+                'Wide-angle lens': { tw: '廣角', cn: '广角', jp: '広角レンズ', kr: '광각 렌즈', es: 'Lente gran angular' },
+
+                // --- 7. 焦點 (Focus) ---
+                'Focus on eyes': { tw: '對焦眼睛', cn: '对焦眼睛', jp: '目にピント', kr: '눈에 초점', es: 'Enfoque en los ojos' },
+                'Focus on lips': { tw: '對焦嘴唇', cn: '对焦嘴唇', jp: '唇にピント', kr: '입술에 초점', es: 'Enfoque en los labios' },
+                'Focus on hands': { tw: '對焦手部', cn: '对焦手部', jp: '手にピント', kr: '손에 초점', es: 'Enfoque en las manos' },
+                'Focus on background': { tw: '對焦背景', cn: '对焦背景', jp: '背景にピント', kr: '배경에 초점', es: 'Enfoque en el fondo' },
+                'Focus on face': { tw: '對焦臉部', cn: '对焦脸部', jp: '顔にピント', kr: '얼굴에 초점', es: 'Enfoque en la cara' },
+
+                // --- 8. 風格 (Tags) ---
+                'Photorealistic': { tw: '寫實', cn: '写实', jp: 'フォトリアル', kr: '실사 같은', es: 'Fotorrealista' },
+                'Hyper-realistic': { tw: '超寫實', cn: '超写实', jp: '超リアル', kr: '극사실주의', es: 'Hiperrealista' },
+                '8k resolution': { tw: '8k超高清', cn: '8k超高清', jp: '8k解像度', kr: '8k 해상도', es: 'Resolución 8k' },
+                'RAW photo': { tw: '原始檔質感', cn: '原始档质感', jp: 'RAW写真', kr: 'RAW 사진', es: 'Foto RAW' },
+                'Masterpiece': { tw: '傑作', cn: '杰作', jp: '傑作', kr: '걸작', es: 'Obra maestra' },
+                'Award-winning photography': { tw: '獲獎作品', cn: '获奖作品', jp: '受賞作品', kr: '수상작', es: 'Fotografía premiada' },
+                'Vogue editorial': { tw: '時尚雜誌風', cn: '时尚杂志风', jp: 'Vogue風', kr: '보그 스타일', es: 'Editorial Vogue' }
+            };
+
+            // 🌟 2. 智能翻譯函數 (Input: 英文Key, Dict: 對應字典)
+            // 如果是英文模式(en)，直接回傳英文。
+            // 如果是其他語言，回傳 "English (翻譯)"。
+            const f = (key, dict) => {
+                if (isEn) return key; 
+                const trans = (dict && dict[key] && dict[key][lang]) ? dict[key][lang] : '';
+                return trans ? `${key} (${trans})` : key;
+            };
+
+            return {
+                'desc': [ 
+                    { 
+                        cat: k.cat_role, 
+                        items: ['University student', 'Office lady', 'Fashion model', 'Instagram influencer', 'K-pop idol', 'Barista', 'Nurse', 'Fitness trainer', 'Business woman', 'Artist', 'Traveler', 'Bride', 'Flight attendant'].map(i => f(i, T_DESC))
+                    }, 
+                    { 
+                        cat: k.cat_style, 
+                        items: ['Girl next door', 'Elegant and classy', 'Cool and edgy', 'Cute and cheerful', 'Mature and sophisticated', 'Sporty and energetic', 'Bohemian style', 'Cyberpunk aesthetic', 'Vintage 90s style', 'Minimalist style'].map(i => f(i, T_DESC))
+                    },
+                    { 
+                        cat: k.cat_ethnicity, 
+                        items: ['Japanese woman', 'Korean woman', 'Chinese woman', 'Taiwanese woman', 'Hong Kong woman', 'Mixed race', 'Asian woman', 'Caucasian woman', 'Latina woman'].map(i => f(i, T_DESC))
+                    } 
+                ],
+
+                // 下面是 'app' 等其他部分，請保持原樣或等待下一步指令...
+
+                                'app': [ 
+                    { 
+                        cat: k.cat_haircolor, 
+                        items: ['Black hair', 'Dark brown hair', 'Chestnut brown hair', 'Blonde hair', 'Platinum blonde hair', 'Red hair', 'Grey hair', 'Highlighted hair'].map(i => f(i, T_APP)) 
+                    }, 
+                    { 
+                        cat: k.cat_hairstyle, 
+                        items: ['Long straight hair', 'Wavy hair', 'Curly hair', 'Short bob cut', 'Pixie cut', 'Shoulder-length hair', 'Ponytail', 'Messy bun', 'Braided hair'].map(i => f(i, T_APP)) 
+                    }, 
+                    { 
+                        cat: k.cat_eyes, 
+                        items: ['Dark brown eyes', 'Light brown eyes', 'Blue eyes', 'Green eyes', 'Hazel eyes', 'Double eyelids', 'Monolid', 'Detailed eyelashes'].map(i => f(i, T_APP)) 
+                    }, 
+                    { 
+                        cat: k.cat_face, 
+                        items: ['Oval face', 'High nose bridge', 'Plump lips', 'Sharp jawline', 'Dimples', 'Mole under eye'].map(i => f(i, T_APP)) 
+                    }, 
+                    { 
+                        cat: k.cat_makeup, 
+                        items: ['No makeup', 'Natural makeup', 'Heavy makeup', 'Red lipstick', 'Glossy lips', 'Smoky eyes'].map(i => f(i, T_APP)) 
+                    }, 
+                    { 
+                        cat: k.cat_skin, 
+                        items: ['Detailed skin texture', 'Visible pores', 'Dewy skin', 'Pale skin', 'Tan skin', 'Freckles', 'Slightly sweaty', 'Oily skin'].map(i => f(i, T_APP)) 
+                    }, 
+                    { 
+                        cat: k.cat_body, 
+                        items: ['Slender body', 'Curvy body', 'Fit body', 'Toned abs', 'Broad shoulders', 'Prominent collarbone', 'Wide hips'].map(i => f(i, T_APP)) 
+                    } 
+                ],
+
+                              'pose': [ 
+                    { 
+                        cat: k.cat_pose_stand, 
+                        items: ['Standing confidently', 'Leaning against wall', 'Hands on hips', 'Crossed arms', 'Turning back', 'Walking towards camera', 'One leg forward', 'Hand in hair', 'Lean forward', 'Peace sign'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_pose_sit, 
+                        items: ['Sitting on chair', 'Sitting on sofa', 'Sitting on ground', 'Sitting with knees up', 'Cross-legged sitting', 'Asian squat', 'Sitting on high stool', 'W-sitting', 'Kneeling'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_pose_lie, 
+                        items: ['Lying on back', 'Lying on stomach', 'Lying on side', 'Reclining on sofa', 'Curled up'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_pose_expr, 
+                        items: ['Duck face', 'Pouty face', 'Winking', 'Finger heart', 'Hands on cheeks', 'Covering mouth', 'Finger on lips', 'Adjusting glasses', 'Salute', 'Cat paw pose'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_pose_life, 
+                        items: ['Holding phone', 'Looking at phone', 'Holding coffee cup', 'Holding bag', 'Stretching', 'Fixing hair', 'Reaching hand out', 'Looking at watch'].map(i => f(i, T_POSE_EXPR)) 
+                    }
+                ],
+                'expr': [ 
+                    { 
+                        cat: k.cat_expr_pos, 
+                        items: ['Gentle smile', 'Grinning', 'Laughing', 'Cheerful', 'Playful wink', 'Confident look', 'Radiant smile', 'Excited expression'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_expr_mood, 
+                        items: ['Seductive gaze', 'Smirk', 'Shy / Blushing', 'Serious', 'Neutral expression', 'Cold gaze', 'Dreamy look', 'Melancholy', 'Bored look'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_expr_subtle, 
+                        items: ['Looking at camera', 'Looking away', 'Looking down', 'Looking up', 'Side glance', 'Eyes closed', 'Pouty face', 'Biting lip', 'Tongue out'].map(i => f(i, T_POSE_EXPR)) 
+                    },
+                    { 
+                        cat: k.cat_expr_drama, 
+                        items: ['Surprised', 'Shocked face', 'Crying', 'Tearing up', 'Angry', 'Frowning', 'Disgusted face', 'Screaming', 'Scared expression'].map(i => f(i, T_POSE_EXPR)) 
+                    }
+                ],
+
+                'handheld': [ { cat: '電子', items: ['Holding iPhone 15 Pro', 'Holding vintage camera', 'Wearing headphones'] }, { cat: '生活', items: ['Holding coffee cup', 'Holding bouquet', 'Holding handbag', 'Holding umbrella'] }, { cat: '美容', items: ['Applying lipstick', 'Holding compact mirror'] } ],
+                                'onepiece': [ 
+                    { 
+                        cat: k.cat_one_dress, 
+                        items: ['Floral summer dress', 'Little black dress', 'White sundress', 'Evening gown', 'Cocktail dress', 'Maxi dress', 'Bodycon dress', 'Wrap dress', 'Slip dress', 'Knitted dress', 'Off-shoulder dress'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_one_suit, 
+                        items: ['Denim jumpsuit', 'Yoga bodysuit', 'Gym set', 'Bunny girl suit', 'Racing queen suit', 'School swimsuit', 'Bikini set', 'One-piece swimsuit', 'Lace bodysuit', 'Leather bodysuit'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_one_uni, 
+                        items: ['Maid outfit', 'Cheongsam/Qipao', 'Kimono', 'Yukata', 'Hanfu', 'School uniform', 'Nurse uniform', 'Police uniform', 'Flight attendant uniform', 'Office suit set'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_one_sleep, 
+                        items: ['Silk pajamas', 'Oversized t-shirt', 'Bathrobe', 'Lingerie set', 'Camisole'].map(i => f(i, T_APPAREL)) 
+                    }
+                ],
+                'top': [ 
+                    { 
+                        cat: k.cat_top_cas, 
+                        items: ['White T-shirt', 'Oversized hoodie', 'Crop top', 'Tank top', 'Knitted sweater', 'Denim jacket', 'Cardigan', 'Plaid shirt', 'Turtle neck sweater', 'Off-shoulder top'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_top_form, 
+                        items: ['White button-up shirt', 'Silk blouse', 'Suit jacket', 'Blazer', 'Tweed jacket', 'Satin blouse', 'V-neck blouse'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_top_sport, 
+                        items: ['Sports bra', 'Yoga top', 'Windbreaker', 'Gym tank', 'Rash guard', 'Track jacket'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_top_in, 
+                        items: ['Camisole', 'Tube top', 'Lace bralette', 'Bathrobe', 'Pajama top', 'Oversized shirt'].map(i => f(i, T_APPAREL)) 
+                    }
+                ],
+                'bottom': [ 
+                    { 
+                        cat: k.cat_bot_skirt, 
+                        items: ['Mini skirt', 'Pleated skirt', 'Pencil skirt', 'Denim skirt', 'Long flowy skirt', 'High-waisted skirt', 'Leather skirt', 'Slit skirt', 'Tulle skirt'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_bot_cas, 
+                        items: ['Skinny jeans', 'Baggy jeans', 'Ripped jeans', 'Wide-leg pants', 'Cargo pants', 'Leather pants'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_bot_form, 
+                        items: ['Suit trousers', 'Chinos', 'Straight-leg pants', 'High-waisted trousers'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: k.cat_bot_short, 
+                        items: ['Denim shorts', 'Hot pants', 'Bike shorts', 'Yoga leggings', 'Gym shorts', 'Sweatpants'].map(i => f(i, T_APPAREL)) 
+                    }
+                ],
+                'legwear': [ 
+                    { 
+                        cat: '絲襪', 
+                        items: ['Sheer black pantyhose', 'Nude pantyhose', 'Fishnet tights', 'Patterned tights'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: '襪子', 
+                        items: ['White ankle socks', 'Knee-high socks', 'Thigh-high socks', 'Slouch socks', 'Invisible socks', 'Sport socks'].map(i => f(i, T_APPAREL)) 
+                    }
+                ],
+                'shoes': [ 
+                    { 
+                        cat: '高跟', 
+                        items: ['High heels', 'Stilettos', 'Platform heels', 'Strappy sandals', 'Ankle strap heels'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: '靴類', 
+                        items: ['Ankle boots', 'Knee-high boots', 'Over-the-knee boots', 'Combat boots'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: '平底', 
+                        items: ['White sneakers', 'Loafers', 'Ballet flats', 'Canvas shoes', 'Flip-flops'].map(i => f(i, T_APPAREL)) 
+                    }
+                ],
+                'acc': [ 
+                    { 
+                        cat: '頭部', 
+                        items: ['Baseball cap', 'Beanie', 'Bucket hat', 'Straw hat', 'Beret', 'Hair ribbon', 'Hair clip'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: '眼鏡', 
+                        items: ['Sunglasses', 'Reading glasses', 'Rimless glasses', 'Oversized glasses'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: '珠寶', 
+                        items: ['Choker', 'Pearl necklace', 'Gold hoop earrings', 'Diamond studs', 'Silver bracelet', 'Luxury watch'].map(i => f(i, T_APPAREL)) 
+                    },
+                    { 
+                        cat: '其他', 
+                        items: ['Leather belt', 'Scarf', 'Handbag', 'Backpack', 'Tote bag'].map(i => f(i, T_APPAREL)) 
+                    }
+                ],
+
+                              'location': [ 
+                    { 
+                        cat: k.cat_loc_in, 
+                        items: ['Modern living room', 'Cozy bedroom', 'Luxury hotel room', 'Sunlit kitchen', 'Coffee shop', 'Library', 'Classroom', 'Art gallery', 'Photography studio'].map(i => f(i, T_ENV)) 
+                    }, 
+                    { 
+                        cat: k.cat_loc_out, 
+                        items: ['Busy city street', 'Rooftop at night', 'Cherry blossom park', 'Beach at sunset', 'Luxury yacht deck', 'Old alleyway', 'Garden with flowers'].map(i => f(i, T_ENV)) 
+                    } 
+                ],
+                'furnprops': [ 
+                    { 
+                        cat: k.lbl_envfurn, 
+                        items: ['Leather sofa', 'King size bed', 'Vintage armchair', 'Bar stool', 'Bathtub', 'Full-length mirror'].map(i => f(i, T_ENV)) 
+                    },
+                    { 
+                        cat: 'Props', 
+                        items: ['Bouquet of roses', 'Vintage camera', 'Open book', 'Laptop', 'Wine glass', 'Candles', 'Teddy bear'].map(i => f(i, T_ENV)) 
+                    } 
+                ],
+                'background': [ 
+                    { 
+                        cat: k.cat_bg_stu, 
+                        items: ['Solid white background', 'Solid grey background', 'Black background', 'Textured wall'].map(i => f(i, T_ENV)) 
+                    },
+                    { 
+                        cat: k.cat_bg_abs, 
+                        items: ['Bokeh lights', 'Blurred city lights', 'Gradient color', 'Abstract shadows', 'White wall with shadow'].map(i => f(i, T_ENV)) 
+                    } 
+                ],
+                'weather': [ 
+                    { 
+                        cat: k.cat_w_nat, 
+                        items: ['Golden hour', 'Blue hour', 'Overcast soft light', 'Rainy day', 'Snowy', 'Foggy/Misty'].map(i => f(i, T_ENV)) 
+                    },
+                    { 
+                        cat: k.cat_w_vibe, 
+                        items: ['Cinematic atmosphere', 'Dreamy haze', 'Cyberpunk neon', 'Warm and cozy', 'Moody and dark'].map(i => f(i, T_ENV)) 
+                    } 
+                ],
+                'foreground': [
+                    { 
+                        cat: k.cat_fg_blur, 
+                        items: ['Blurred flowers in foreground', 'Raindrops on glass', 'Window reflection', 'Tree branches', 'Sheer curtain', 'Crystal prism effect'].map(i => f(i, T_ENV)) 
+                    },
+                    { 
+                        cat: k.cat_fg_obj, 
+                        items: ['Car window frame', 'Coffee cup in foreground', 'Mesh fence'].map(i => f(i, T_ENV)) 
+                    }
+                ],
+
+                               'frame': [ { cat: k.lbl_frame, items: ['Extreme Close-up', 'Close-up', 'Medium shot', 'Cowboy shot', 'Full body shot', 'Wide shot'].map(i => f(i, T_PHOTO)) } ],
+                'persp': [ { cat: k.lbl_persp, items: ['Eye-level shot', 'Low angle', 'High angle', 'Over-the-shoulder', 'Selfie angle', 'Dutch angle'].map(i => f(i, T_PHOTO)) } ],
+                'light': [
+                    { 
+                        cat: k.cat_l_nat, 
+                        items: ['Natural daylight', 'Golden hour', 'Soft morning light', 'Window light', 'Dappled sunlight'].map(i => f(i, T_PHOTO)) 
+                    },
+                    { 
+                        cat: k.cat_l_art, 
+                        items: ['Studio lighting', 'Softbox lighting', 'Rembrandt lighting', 'Cinematic lighting', 'Neon lights', 'Backlighting', 'Volumetric lighting'].map(i => f(i, T_PHOTO)) 
+                    }
+                ],
+                'color': [
+                    { 
+                        cat: k.cat_c_film, 
+                        items: ['Fujifilm Pro 400H', 'Kodak Portra 400', 'Cinestill 800T', 'Polaroid style'].map(i => f(i, T_PHOTO)) 
+                    },
+                    { 
+                        cat: k.cat_c_tone, 
+                        items: ['Cinematic Teal & Orange', 'Muted tones', 'High contrast', 'Warm vintage tones', 'Cool blue tones'].map(i => f(i, T_PHOTO)) 
+                    }
+                ],
+                'fx': [ { cat: k.lbl_fx, items: ['Film grain', 'Light leaks', 'Chromatic aberration', 'Vignette', 'Motion blur', 'Lens flare', 'Glow effect'].map(i => f(i, T_PHOTO)) } ],
+                'cam': [
+                    { 
+                        cat: k.cat_cam_ap, 
+                        items: ['f/1.8', 'f/2.8', 'f/8', 'Shallow depth of field', 'Bokeh background'].map(i => f(i, T_PHOTO)) 
+                    },
+                    { 
+                        cat: k.cat_cam_lens, 
+                        items: ['35mm lens', '50mm lens', '85mm lens', 'Wide-angle lens'].map(i => f(i, T_PHOTO)) 
+                    }
+                ],
+                'focus': [ { cat: k.lbl_focus, items: ['Focus on eyes', 'Focus on lips', 'Focus on hands', 'Focus on background', 'Focus on face'].map(i => f(i, T_PHOTO)) } ],
+                'tags': [ { cat: k.lbl_tags, items: ['Photorealistic', 'Hyper-realistic', '8k resolution', 'RAW photo', 'Masterpiece', 'Award-winning photography', 'Vogue editorial'].map(i => f(i, T_PHOTO)) } ],
+                'neg': [ { cat: 'Neg', items: ['low quality', 'worst quality', 'blurry', 'bad hands', 'missing fingers', 'bad anatomy', 'text', 'watermark'] } ]
+            };
+        } // End of getPresets function
+
+
+        let PRESETS = getPresets('tw');
+        let subjectMode = 'single';
+        let currentInputId = null;
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // 1. Update UI Text
+            const dict = DICTIONARY[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) el.textContent = dict[key];
+            });
+            
+            // 2. Update Placeholders (Specific logic due to dynamic generation)
+            // Re-render forms to apply new placeholders/labels
+            renderStaticTabs();
+            updateMultiMode();
+            
+            // 3. Update Presets Data
+            PRESETS = getPresets(lang);
+        }
+
+        function initPresets() { updatePresetDropdown(); }
+        
+        function getFieldHTML(id, labelKey, type = "text", placeholder = "-", isChecked = true, extraAttrs = "", warningText = "", presetType = "") {
+            const label = DICTIONARY[currentLang][labelKey] || labelKey; // Use key to lookup or fallback
+            const checkedAttr = isChecked ? "checked" : "";
+            const disabledClass = isChecked ? "" : "disabled";
+            const hasMagicClass = presetType ? "has-magic" : "";
+            const textareaClass = type === 'textarea' ? "textarea-wrapper" : "input-wrapper";
+            const gridClass = (type === 'textarea' || id === 'negPrompt' || id === 'photoFocus') ? "form-full-width" : "";
+
+            let inputHTML = '';
+            const magicBtnHTML = presetType ? `<button class="magic-btn" onclick="openPreset(event, '${id}', '${presetType}', '${label}')">✨</button>` : '';
+
+            if (type === 'select') {
+                 let opts = '';
+                 // Simplified Select Options translation (Static for now to avoid complexity)
+                 if (id === 'envType') opts = '<option value="Indoor">Indoor</option><option value="Outdoor">Outdoor</option><option value="Studio">Studio</option><option value="Fantasy">Fantasy</option>';
+                 else if (id.includes('Gender')) opts = '<option value="Female">Female</option><option value="Male">Male</option>';
+                 else if (id.includes('Pos')) opts = '<option value="-">-</option><option value="Far Left">Far Left</option><option value="Left">Left</option><option value="Center">Center</option><option value="Right">Right</option><option value="Far Right">Far Right</option>';
+                 else opts = '<option value="Full body shot">Full body</option><option value="Medium shot">Medium</option><option value="Close-up">Close-up</option>';
+                 inputHTML = `<select id="${id}" onchange="updateJSON()" ${extraAttrs}>${opts}</select>`;
+            } else {
+                // Recover existing value if re-rendering
+                let existingVal = "";
+                const existingEl = document.getElementById(id);
+                if(existingEl) existingVal = existingEl.value;
+                
+                inputHTML = `<div class="${textareaClass} ${hasMagicClass}">
+                                ${magicBtnHTML}
+                                <input type="${type}" id="${id}" placeholder="${placeholder}" value="${existingVal}" oninput="updateJSON()" ${extraAttrs}>
+                             </div>`;
+            }
+
+            const warningHTML = warningText ? `<span class="warning-text">${warningText}</span>` : '';
+            return `<div class="form-row ${disabledClass} ${gridClass}" id="row_${id}">
+                        <input type="checkbox" class="field-checkbox" id="chk_${id}" ${checkedAttr} onchange="toggleField('${id}')">
+                        <div class="field-content">
+                            <label title="${label}">${label}</label>
+                            ${inputHTML}${warningHTML}
+                        </div>
+                    </div>`;
+        }
+
+        function getApparelFormHTML(index, isMulti) {
+            const suffix = isMulti ? `_${index}` : '';
+            const title = isMulti ? `Character ${index}` : ''; // Keep English or dynamic? English for ID is fine
+            const wrapperClass = isMulti ? 'char-card outfit-card' : 'form-grid';
+            const content = `
+                ${getFieldHTML(`wearOnepiece${suffix}`, 'lbl_onepiece', 'text', '-', false, '', '', 'onepiece')}
+                ${getFieldHTML(`wearTop${suffix}`, 'lbl_top', 'text', '-', true, '', '', 'top')}
+                ${getFieldHTML(`wearBottom${suffix}`, 'lbl_bottom', 'text', '-', true, '', '', 'bottom')}
+                ${getFieldHTML(`wearLegs${suffix}`, 'lbl_legs', 'text', '-', true, '', '', 'legwear')}
+                ${getFieldHTML(`wearShoes${suffix}`, 'lbl_shoes', 'text', '-', true, '', '', 'shoes')}
+                ${getFieldHTML(`wearAcc${suffix}`, 'lbl_acc', 'text', '-', true, '', '', 'acc')}
+            `;
+            return isMulti ? `<div class="${wrapperClass}"><div class="char-title">${title} ${DICTIONARY[currentLang].tab_apparel}</div><div class="form-grid">${content}</div></div>` : `<div class="form-grid">${content}</div>`;
+        }
+
+        function getCharFormHTML(index, isMulti) {
+            const suffix = isMulti ? `_${index}` : '';
+            const title = isMulti ? `Character ${index}` : '';
+            const wrapperClass = isMulti ? 'char-card' : 'form-grid';
+            const posField = isMulti ? getFieldHTML(`subjPos${suffix}`, 'lbl_pos', 'select', '-', true) : '';
+            const content = `
+                ${posField}
+                ${getFieldHTML(`subjGender${suffix}`, 'lbl_gender', 'select', '-', true)}
+                ${getFieldHTML(`subjAge${suffix}`, 'lbl_age', 'number', '20', true, 'value="20" min="1"', '')}
+                ${getFieldHTML(`subjDesc${suffix}`, 'lbl_desc', 'text', '-', true, '', '', 'desc')}
+                ${getFieldHTML(`subjApp${suffix}`, 'lbl_app', 'text', '-', true, '', '', 'app')}
+                ${getFieldHTML(`subjHeld${suffix}`, 'lbl_held', 'text', '-', true, '', '', 'handheld')}
+                ${getFieldHTML(`subjPose${suffix}`, 'lbl_pose', 'text', '-', true, '', '', 'pose')}
+                ${getFieldHTML(`subjExpr${suffix}`, 'lbl_expr', 'text', '-', true, '', '', 'expr')}
+            `;
+            return isMulti ? `<div class="${wrapperClass}"><div class="char-title">${title}</div><div class="form-grid">${content}</div></div>` : `<div class="form-grid">${content}</div>`;
+        }
+
+        function renderStaticTabs() {
+            document.getElementById('envContainer').innerHTML = `<div class="form-grid">` +
+                getFieldHTML('envType', 'lbl_envtype', 'select', '-', true) +
+                getFieldHTML('envLoc', 'lbl_envloc', 'text', '-', true, '', '', 'location') +
+                getFieldHTML('envFg', 'lbl_envfg', 'text', '-', true, '', '', 'foreground') + 
+                getFieldHTML('envWeather', 'lbl_envweather', 'text', '-', true, '', '', 'weather') +
+                getFieldHTML('envFurn', 'lbl_envfurn', 'text', '-', true, '', '', 'furnprops') +
+                getFieldHTML('envBg', 'lbl_envbg', 'text', '-', true, '', '', 'background') +
+                `</div>`;
+
+            document.getElementById('photoContainer').innerHTML = `<div class="form-grid">` +
+                getFieldHTML('photoFrame', 'lbl_frame', 'text', '-', true, '', '', 'frame') + 
+                getFieldHTML('photoPersp', 'lbl_persp', 'text', '-', true, '', '', 'persp') +
+                getFieldHTML('photoLight', 'lbl_light', 'text', '-', true, '', '', 'light') +
+                getFieldHTML('photoColor', 'lbl_color', 'text', '-', true, '', '', 'color') +
+                getFieldHTML('photoFX', 'lbl_fx', 'text', '-', true, '', '', 'fx') +
+                getFieldHTML('photoCam', 'lbl_cam', 'text', 'f/1.8, 85mm', true, '', '', 'cam') +
+                getFieldHTML('photoFocus', 'lbl_focus', 'text', '-', true, '', '', 'focus') +
+                getFieldHTML('photoTags', 'lbl_tags', 'text', '-', true, 'value="Realism"', '', 'tags') +
+                `</div>`;
+            
+            document.getElementById('negContainer').innerHTML = 
+                `<div class="char-card">
+                     <div class="char-title">🚫 Negative Prompt</div>
+                     <div class="form-grid">
+                        ${getFieldHTML('negPrompt', 'Negative Prompt', 'textarea', 'low quality...', false, '', '', 'neg')}
+                     </div>
+                </div>`;
+        }
+
+        function openPreset(e, inputId, type, title) {
+            e.preventDefault(); e.stopPropagation(); currentInputId = inputId;
+            const body = document.getElementById('modalBody');
+            document.getElementById('modalTitle').textContent = `${DICTIONARY[currentLang].modal_title} ${title}`;
+            
+            const data = PRESETS[type];
+            let html = '';
+            
+            if(data) data.forEach(group => { 
+                html += `<div class="preset-group">`;
+                html += `<div class="preset-category">${group.cat}</div>`; 
+                group.items.forEach(item => { 
+                    let text = typeof item === 'object' ? item.text : item;
+                    // Extract core value (part before parenthesis) for prompt
+                    let value = text.includes(' (') ? text.split(' (')[0] : text;
+                    let imgSrc = typeof item === 'object' ? (item.img || '') : '';
+                    html += `<div class="preset-item" onclick="applyPreset('${value.replace(/'/g, "\\'")}')" onmouseenter="showPreview(event, '${imgSrc}')" onmouseleave="hidePreview()">${text}</div>`; 
+                }); 
+                html += `</div>`; 
+            });
+            
+            body.innerHTML = html;
+            document.getElementById('modalOverlay').style.display = 'block';
+        }
+
+        function showPreview(e, imgSrc) {
+            if (!imgSrc) return;
+            const popup = document.getElementById('presetPreview');
+            document.getElementById('presetPreviewImg').src = imgSrc;
+            popup.style.display = 'block';
+            const rect = e.target.getBoundingClientRect();
+            let left = rect.right + 10;
+            if (left + 240 > window.innerWidth) left = rect.left - 240; 
+            let top = rect.top;
+            if (top + 200 > window.innerHeight) top = window.innerHeight - 200;
+            popup.style.left = left + 'px'; popup.style.top = top + 'px';
+        }
+        function hidePreview() { document.getElementById('presetPreview').style.display = 'none'; }
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; hidePreview(); }
+        function applyPreset(text) { const input = document.getElementById(currentInputId); if (input.value && input.value !== '-') input.value += `, ${text}`; else input.value = text; updateJSON(); closeModal(); }
+        function toggleField(id) { const checkbox = document.getElementById(`chk_${id}`); const row = document.getElementById(`row_${id}`); if (checkbox.checked) row.classList.remove('disabled'); else row.classList.add('disabled'); updateJSON(); }
+        
+        function setSubjectMode(mode) { subjectMode = mode; document.getElementById('btnSingle').className = mode === 'single' ? 'mode-btn active' : 'mode-btn'; document.getElementById('btnMulti').className = mode === 'multi' ? 'mode-btn active' : 'mode-btn'; document.getElementById('multiCountBox').style.display = mode === 'multi' ? 'block' : 'none'; updateMultiMode(); }
+        
+        // Modified to preserve values during language switch by checking existing elements
+        function updateMultiMode() { 
+            const container = document.getElementById('subjectContainer'); 
+            const apparelContainer = document.getElementById('apparelContainer'); 
+            
+            // We need to re-generate HTML to apply new language labels
+            if (subjectMode === 'single') { 
+                container.innerHTML = getCharFormHTML(1, false); 
+                apparelContainer.innerHTML = getApparelFormHTML(1, false); 
+            } else { 
+                const count = document.getElementById('charCount').value || 2; 
+                let charHtml = ''; let apparelHtml = ''; 
+                for(let i=1; i<=count; i++) { 
+                    charHtml += getCharFormHTML(i, true); 
+                    apparelHtml += getApparelFormHTML(i, true); 
+                } 
+                container.innerHTML = charHtml; 
+                apparelContainer.innerHTML = apparelHtml; 
+            } 
+            updateJSON(); 
+        }
+
+        function switchTab(tabId) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById(tabId).classList.add('active'); const tabMap = { 'subject':0, 'apparel':1, 'env':2, 'photo':3, 'neg':4 }; document.querySelectorAll('.tab-btn')[tabMap[tabId]].classList.add('active'); }
+        function toggleRefPanel(type) { let isChecked, controls, box; if (type === 'char') { isChecked = document.getElementById('useRefChar').checked; controls = document.getElementById('charControls'); box = document.getElementById('charToggleBox'); } else if (type === 'outfit') { isChecked = document.getElementById('useRefOutfit').checked; controls = document.getElementById('outfitControls'); box = document.getElementById('outfitToggleBox'); } else if (type === 'env') { isChecked = document.getElementById('useRefEnv').checked; controls = document.getElementById('envControls'); box = document.getElementById('envToggleBox'); } controls.style.display = isChecked ? 'block' : 'none'; box.className = isChecked ? `toggle-wrapper active-${type}` : 'toggle-wrapper'; updateJSON(); }
+        function updatePresetDropdown() { try { const presets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); const select = document.getElementById('presetSelect'); select.innerHTML = `<option value="">${DICTIONARY[currentLang].select_preset}</option>`; Object.keys(presets).forEach(name => { const option = document.createElement('option'); option.value = name; option.textContent = name; select.appendChild(option); }); } catch(e) { console.error("Storage Error", e); } }
+        function saveCurrentPreset() { const name = prompt("Name:"); if (!name) return; const state = { mode: subjectMode, charCount: document.getElementById('charCount').value, inputs: {} }; document.querySelectorAll('input, textarea, select').forEach(el => { if(el.id) state.inputs[el.id] = { value: el.value, type: el.type, checked: el.checked }; }); const presets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); presets[name] = state; localStorage.setItem(STORAGE_KEY, JSON.stringify(presets)); updatePresetDropdown(); document.getElementById('presetSelect').value = name; }
+        function loadSelectedPreset() { const name = document.getElementById('presetSelect').value; if(!name) return; const presets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); const state = presets[name]; if(state) { setSubjectMode(state.mode); if(state.mode === 'multi') { document.getElementById('charCount').value = state.charCount; updateMultiMode(); } setTimeout(() => { Object.keys(state.inputs).forEach(id => { const el = document.getElementById(id); if(el) { const saved = state.inputs[id]; if(saved.type === 'checkbox') { el.checked = saved.checked; if(id.startsWith('chk_')) toggleField(id.replace('chk_', '')); else if(id.startsWith('useRef')) { if(id === 'useRefChar') toggleRefPanel('char'); if(id === 'useRefOutfit') toggleRefPanel('outfit'); if(id === 'useRefEnv') toggleRefPanel('env'); } } else { el.value = saved.value; } } }); updateJSON(); }, 50); } }
+                // 🗑️ 刪除功能 (補上)
+        function deleteSelectedPreset() {
+            const select = document.getElementById('presetSelect');
+            const name = select.value;
+
+            if (!name) {
+                alert("請先選擇一個要刪除的設定檔！");
+                return;
+            }
+
+            if (confirm(`確定要刪除 "${name}" 嗎？此動作無法復原。`)) {
+                const presets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                delete presets[name];
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+                updatePresetDropdown();
+                select.value = ""; // 重置選單
+            }
+        }
+
+
+        function isEnabled(id) { const el = document.getElementById(`chk_${id}`); return el ? el.checked : false; }
+        function getVal(id) { if (!isEnabled(id)) return undefined; const el = document.getElementById(id); return el ? (el.value || "-") : "-"; }
+        function getRangeStr(startId, endId) { const s = document.getElementById(startId).value; const e = document.getElementById(endId).value; if(s && e) return `Images ${s}-${e}`; if(s) return `Image ${s}`; return ""; }
+        function getApparelData(suffix) { return { one_piece: getVal(`wearOnepiece${suffix}`), top: getVal(`wearTop${suffix}`), bottom: getVal(`wearBottom${suffix}`), legwear: getVal(`wearLegs${suffix}`), footwear: getVal(`wearShoes${suffix}`), accessories: getVal(`wearAcc${suffix}`) }; }
+        function getCharData(suffix) { let data = { gender: getVal(`subjGender${suffix}`), description: getVal(`subjDesc${suffix}`), age: getVal(`subjAge${suffix}`), appearance: getVal(`subjApp${suffix}`), handheld_items: getVal(`subjHeld${suffix}`), pose: getVal(`subjPose${suffix}`), expression: getVal(`subjExpr${suffix}`), apparel: getApparelData(suffix) }; if (subjectMode === 'multi') { const pos = getVal(`subjPos${suffix}`); if (pos && pos !== '-') data.position = pos; } return JSON.parse(JSON.stringify(data)); }
+
+        function updateJSON() {
+            try {
+                const useRefChar = document.getElementById('useRefChar').checked;
+                const useRefOutfit = document.getElementById('useRefOutfit').checked;
+                const useRefEnv = document.getElementById('useRefEnv').checked;
+                let constraints = {};
+                if (useRefChar || useRefOutfit || useRefEnv) {
+                    constraints.reference_policy = { strict_adherence: true, reference_priority: "High" };
+                    let fixedAttrs = []; let noModInstructions = []; let mapping = {};
+                    if (useRefChar) { if (document.getElementById('charFace').checked) fixedAttrs.push("Face"); if (document.getElementById('charBody').checked) fixedAttrs.push("Body Type"); const refStr = getRangeStr('charIdxStart', 'charIdxEnd'); if (refStr) mapping.character_reference = refStr; noModInstructions.push("Do not alter appearance."); }
+                    if (useRefOutfit) { fixedAttrs.push("Outfit"); const refStr = getRangeStr('outfitIdxStart', 'outfitIdxEnd'); if (refStr) mapping.outfit_reference = refStr; noModInstructions.push("Clothing must match exactly."); }
+                    if (useRefEnv) { fixedAttrs.push("Background"); const refStr = getRangeStr('envIdxStart', 'envIdxEnd'); if (refStr) mapping.environment_reference = refStr; }
+                    if (fixedAttrs.length > 0) constraints.reference_policy.fixed_attributes = fixedAttrs;
+                    if (Object.keys(mapping).length > 0) constraints.reference_policy.image_mapping = mapping;
+                    if (noModInstructions.length > 0) constraints.reference_policy.instructions = noModInstructions.join(" ");
+                }
+                let subjectData;
+                if (subjectMode === 'single') subjectData = getCharData('');
+                else { subjectData = []; const count = document.getElementById('charCount').value || 2; for(let i=1; i<=count; i++) subjectData.push(getCharData(`_${i}`)); }
+                
+                const data = { visual_style_analysis: { control_constraints: (useRefChar || useRefOutfit || useRefEnv) ? constraints : undefined, subject: subjectData, environment: { scene_type: getVal('envType'), foreground: getVal('envFg'), location: getVal('envLoc'), weather_atmosphere: getVal('envWeather'), furniture_and_props: getVal('envFurn'), background: getVal('envBg') }, composition: { framing: getVal('photoFrame'), perspective: getVal('photoPersp'), visual_focus: getVal('photoFocus') }, lighting: { type: getVal('photoLight') }, technical: { camera_specs: getVal('photoCam'), color_grading: getVal('photoColor'), visual_effects: getVal('photoFX') }, style_tags: isEnabled('photoTags') ? document.getElementById('photoTags').value.split(',').map(tag => tag.trim()).filter(tag => tag !== "") : undefined, negative_prompt: getVal('negPrompt') } };
+                if (!useRefChar && !useRefOutfit && !useRefEnv) delete data.visual_style_analysis.control_constraints;
+                if (data.visual_style_analysis.negative_prompt === '-') delete data.visual_style_analysis.negative_prompt;
+                document.getElementById('jsonOutput').textContent = JSON.stringify(data, null, 2);
+            } catch(e) { console.error("Update JSON Failed:", e); }
+        }
+
+        function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('jsonOutput').textContent).then(() => { const btn = document.querySelector('.copy-btn'); const originalText = btn.textContent; btn.textContent = "✅ OK!"; btn.style.background = "#10b981"; setTimeout(() => { btn.textContent = originalText; btn.style.background = ""; }, 2000); }); }
+        
+        // Init
+        renderStaticTabs();
+        updateMultiMode();
+        initPresets();
+        setLanguage('tw'); // Start with Traditional Chinese
+    </script>
+</body>
+</html>
