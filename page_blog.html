@@ -6,112 +6,39 @@
     <title>Coming Soon | Nano Banana</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: #4b5563;
-            text-align: center;
-        }
-
-        .container {
-            background: white;
-            padding: 40px 60px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            max-width: 400px;
-            width: 90%;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        h1 {
-            margin: 0 0 10px 0;
-            color: #3b82f6;
-            font-size: 1.5rem;
-        }
-
-        p {
-            margin: 0;
-            line-height: 1.6;
-            color: #6b7280;
-        }
-
-        .loader {
-            margin-top: 25px;
-            width: 100%;
-            height: 6px;
             background: #f3f4f6;
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #4b5563; text-align: center;
         }
-
-        .loader::after {
-            content: '';
-            position: absolute;
-            left: -50%;
-            top: 0;
-            height: 100%;
-            width: 50%;
-            background: #3b82f6;
-            border-radius: 3px;
-            animation: loading 1.5s infinite ease-in-out;
+        .container {
+            margin-top: 10vh;
+            background: white; padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            max-width: 400px; width: 90%;
         }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .main-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; opacity: 0.8; }
+        h1 { 
+            margin: 0 0 15px 0; color: #10b981; font-size: 1.5rem; 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-
-        @keyframes loading {
-            0% { left: -50%; }
-            100% { left: 100%; }
+        .title-icon { font-size: 1.4rem; }
+        p { margin: 0; line-height: 1.6; color: #6b7280; font-size: 1rem; }
+        .divider {
+            margin-top: 25px; width: 50px; height: 4px;
+            background: #e5e7eb; border-radius: 2px; display: inline-block;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <!-- 🍌 這裡的圖標和文字可以根據不同檔案稍微改一下 -->
-        <span class="icon">🚧</span>
-        <h1>功能開發中</h1>
-        <p>這項功能正在努力趕工製作，<br>很快就會與您見面！</p>
-        
-        <div class="loader"></div>
+        <span class="main-icon">🚧</span>
+        <h1><span class="title-icon">📚</span> 技巧文章</h1>
+        <p>正在撰寫獨家秘籍...<br>乾貨滿滿，敬請期待！</p>
+        <div class="divider"></div>
     </div>
-
-    <!-- 💡 每個頁面可以改這個 Script 來顯示不同內容 -->
-    <script>
-        // 自動判斷是哪個頁面，並修改文字
-        const path = window.location.pathname;
-        const icon = document.querySelector('.icon');
-        const title = document.querySelector('h1');
-        const desc = document.querySelector('p');
-
-        if (path.includes('anime')) {
-            icon.textContent = '🎨';
-            title.textContent = '動畫風格工具';
-            desc.innerHTML = '正在調教 AI 畫師...<br>二次元魔法即將開啟！';
-        } else if (path.includes('pose')) {
-            icon.textContent = '💃';
-            title.textContent = '姿勢圖書館';
-            desc.innerHTML = '正在整理最美 pose...<br>讓您的角色不再僵硬！';
-        } else if (path.includes('blog')) {
-            icon.textContent = '📚';
-            title.textContent = '技巧文章';
-            desc.innerHTML = '正在撰寫獨家秘籍...<br>乾貨滿滿，敬請期待！';
-        }
-    </script>
 </body>
 </html>
